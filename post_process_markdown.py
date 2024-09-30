@@ -1,6 +1,6 @@
 #!/bin/usr/
 """
-Quick and dirty Python script to create and post process wandb_workspaces API.
+Quick and dirty Python script to post process output markdown files from lazydocs.
 
 Future:
 This script post processes docs spit out by using lazydocs. It might be faster
@@ -59,6 +59,7 @@ def fix_style(text):
 
 
 def replace_github_urls(text):
+    """Replace the URLs in the text with the new format."""
     # Define the pattern to match the URLs
     pattern = r'(https://github\.com/wandb/wandb-workspaces)/tree/main/(.*?)/([^/]+)#L(\d+)'
     
@@ -79,6 +80,7 @@ def replace_github_urls(text):
 
 
 def remove_patterns_from_markdown(markdown_text):
+    """Remove patterns from the markdown text."""
     module_name_pattern = r'(# <kbd>module</kbd> `[\w\.]+)\.[\w]+`'
     global_variable_pattern = r"(?s)\*\*Global Variables\*\*\n[-]+\n.*?\n---"
     base_class_pattern = r'<a href="[^"]*">\s*<img[^>]*>\s*</a>\s*## <kbd>class</kbd> `Base`'

@@ -8,7 +8,7 @@
 # MODULE=wandb_workspaces.workspaces.interface
 MODULE=wandb_workspaces.reports.v2.interface
 TMP_DIR=workspaces_tmp
-DIR="/Users/noahluna/Desktop/docodile/docs/ref/wandb_workspaces/"
+DIR="/Users/noahluna/Desktop/docodile/docs/ref/python/workspaces/"
 
 # Create initial doc
 lazydocs --output-path=./$TMP_DIR $MODULE --src-base-url="https://github.com/wandb/wandb-workspaces/tree/main"
