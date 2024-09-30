@@ -1,4 +1,4 @@
-#!/bin/usr/
+#!/bin/usr/python
 """
 Quick and dirty Python script to post process output markdown files from lazydocs.
 
