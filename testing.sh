@@ -5,10 +5,10 @@
 ## Extract worskpace
 ## Add that as a line in README and link to it?
 
-# MODULE=wandb_workspaces.workspaces.interface
-MODULE=wandb_workspaces.reports.v2.interface
+MODULE=wandb_workspaces.workspaces.interface
+# MODULE=wandb_workspaces.reports.v2.interface
 TMP_DIR=workspaces_tmp
-DIR="/Users/noahluna/Desktop/docodile/docs/ref/python/workspaces/"
+DIR="/Users/noahluna/Desktop/docodile/docs/ref/python/workspaces_api/"
 
 # Create initial doc
 lazydocs --output-path=./$TMP_DIR $MODULE --src-base-url="https://github.com/wandb/wandb-workspaces/tree/main"

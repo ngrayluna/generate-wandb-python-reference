@@ -97,11 +97,7 @@ def remove_patterns_from_markdown(markdown_text):
 
 
 
-
 def alphabetize_headings(markdown_text):
-    """
-    Alphabetize headings. First part of this function ensures that the module docstring is preserved.
-    """
     # Split the text into two parts: the module docstring (before the first "---") and the rest
     parts = markdown_text.split('---', 1)
     
@@ -119,15 +115,28 @@ def alphabetize_headings(markdown_text):
 
     sections = []
     
-    # Iterate over each block to find H2 headings and group content
+    # Pattern to match H2 headings (classes)
+    h2_pattern = re.compile(r'## <kbd>class</kbd> `([^`]+)`')
+    
+    current_section = None
+    
+    # Iterate over each block to find H2 headings and group content, including H3
     for block in blocks:
-        # Look for the H2 heading within the block
-        match = re.search(r'## <kbd>class</kbd> `([^`]+)`', block)
-        if match:
+        h2_match = h2_pattern.search(block)
+        if h2_match:
             # Extract the class name from the H2 heading
-            class_name = match.group(1)
-            # Store the entire block with the class name as a tuple
-            sections.append((class_name, block))
+            class_name = h2_match.group(1)
+            if current_section:
+                sections.append(current_section)
+            # Start a new section with the current block as content
+            current_section = (class_name, block)
+        elif current_section:
+            # Append the block content to the current section
+            current_section = (current_section[0], current_section[1] + block)
+
+    # Append the last section
+    if current_section:
+        sections.append(current_section)
 
     # Sort the sections alphabetically by the class name
     sections.sort(key=lambda x: x[0])
@@ -143,21 +152,36 @@ def process_text(markdown_text):
     Silly chain of processing. Clean up later
     """
     return alphabetize_headings(replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))))
+    #return replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text))))
+
+
+def rename_markdown_file(filename):
+    """
+    Rename markdown file. Original file name lists the entire
+    module import. For example, workspaces API originally
+    has a filename of `workspaces_tmp/wandb_workspaces.workspaces.interface.md`
+    """
+    
+    new_filename = os.path.join(os.path.dirname(filename), os.path.basename(filename).split('.')[1]+".md")
+    print(f"Renaming markdown page from {filename} to {new_filename}") 
+    os.rename(filename, new_filename)
 
 
 def main(args):
     with open(args.file, 'r') as file:
         markdown_text = file.read()
 
-    # Modify the Markdown content (e.g., remove <img> tags and specified comment)
+    # Get the markdown H1 title, and get the original filename
     title = markdown_title(args.file)
+
+    # Modify markdown content (e.g., remove <img> tags and specified comment)
     cleaned_markdown = process_text(markdown_text)
 
     with open(args.file, 'w') as file:
         file.write(title)
         file.write(cleaned_markdown)
 
-
+    rename_markdown_file(args.file)
 
 
 if __name__ == "__main__":
