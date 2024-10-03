@@ -1,14 +1,11 @@
-#!/bin/usr
+#!/bin/usr/bash
 
 # FUTURE: Create README
-## Get file name file e.g. wandb_workspaces.workspaces.interface.md
-## Extract worskpace
-## Add that as a line in README and link to it?
 
-MODULE=wandb_workspaces.workspaces.interface
-# MODULE=wandb_workspaces.reports.v2.interface
+# MODULE=wandb_workspaces.workspaces.interface
+MODULE=wandb_workspaces.reports.v2.interface
 TMP_DIR=workspaces_tmp
-DIR="/Users/noahluna/Desktop/docodile/docs/ref/python/workspaces_api/"
+DIR="/Users/noahluna/Desktop/docodile/docs/ref/python/wandb_workspaces/"
 
 # Create initial doc
 lazydocs --output-path=./$TMP_DIR $MODULE --src-base-url="https://github.com/wandb/wandb-workspaces/tree/main"
