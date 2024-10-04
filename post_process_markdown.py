@@ -15,6 +15,7 @@ def markdown_title(filename):
     """
     Create markdown title based on the filename read in.
     """
+    # Not sure if this should be capitalized or not...
     base_name = os.path.basename(filename).split('.')[1].capitalize()
     return f"# {base_name}\n\n"
 
@@ -59,7 +60,10 @@ def fix_style(text):
 
 
 def replace_github_urls(text):
-    """Replace the URLs in the text with the new format."""
+    """
+    Add the line number to the URL for the GitHub links.
+    TO DO: This does not properly fix the URL for the first top most pattern.
+    """
     # Define the pattern to match the URLs
     pattern = r'(https://github\.com/wandb/wandb-workspaces)/tree/main/(.*?)/([^/]+)#L(\d+)'
     
@@ -94,7 +98,6 @@ def remove_patterns_from_markdown(markdown_text):
     cleaned_text = re.sub(footer_pattern, '', cleaned_text).strip()
 
     return cleaned_text
-
 
 
 def alphabetize_headings(markdown_text):
@@ -147,12 +150,38 @@ def alphabetize_headings(markdown_text):
     return sorted_markdown
 
 
+def temp_processing(content, internal_tag="INTERNAL"):
+    #Keyword to look for in the class docstring
+    internal_tag = "INTERNAL"
+    
+    # Pattern to match class definitions and their content
+    # The pattern matches from '## <kbd>class</kbd>' to the next markdown header or the end of the file
+    class_pattern = re.compile(r"(## <kbd>class</kbd> .+?)(?=## <kbd>class</kbd>|$)", re.DOTALL)
+    
+    # Pattern to match all <a></a> tags and their content
+    a_tag_pattern = re.compile(r'<a\b[^>]*>(.*?)</a>', re.DOTALL)
+    
+    # 1. Remove sections that contain the internal tag
+    matches = class_pattern.findall(content)
+    for match in matches:
+        if internal_tag in match:
+            content = content.replace(match, "")
+    
+    #2. Remove all <a></a> tags
+    content = re.sub(a_tag_pattern, '', content)
+
+    return content 
+
+
 def process_text(markdown_text):
     """
     Silly chain of processing. Clean up later
     """
-    return alphabetize_headings(replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))))
-    #return replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text))))
+    # Separating 'temp_processing' because it is a temporary fix
+    markdown_text = alphabetize_headings(replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))))
+
+    #return alphabetize_headings(replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))))
+    return temp_processing(markdown_text)    
 
 
 def rename_markdown_file(filename):
@@ -161,10 +190,31 @@ def rename_markdown_file(filename):
     module import. For example, workspaces API originally
     has a filename of `workspaces_tmp/wandb_workspaces.workspaces.interface.md`
     """
-    
+
     new_filename = os.path.join(os.path.dirname(filename), os.path.basename(filename).split('.')[1]+".md")
     print(f"Renaming markdown page from {filename} to {new_filename}") 
     os.rename(filename, new_filename)
+
+
+def add_import_statement():
+    # Add CTA import statement
+    return "import { CTAButtons } from '@site/src/components/CTAButtons/CTAButtons.tsx'\n\n"
+
+
+def format_CTA_button(filename, base_url="https://github.com/wandb/wandb-workspaces/tree/main"):
+    """Add GitHub CTA button to the markdown file."""
+
+    def _convert_github_md_to_py_url(url: str) -> str:
+        # Define the regex pattern to match the URL and the file extension
+        pattern = r"(https://github\.com/.+?/tree/main/)(.+?)\.([\w]+)$"
+        
+        # Replace dots in the path with slashes, change "tree" to "blob", and change ".md" to ".py"
+        result = re.sub(pattern, lambda m: f"{m.group(1).replace('tree', 'blob')}{m.group(2).replace('.', '/')}.py", url)        
+        return result
+
+    href_links = _convert_github_md_to_py_url(os.path.join(base_url, os.path.basename(filename)))
+
+    return "<CTAButtons githubLink='"+ href_links + "'/>\n\n"
 
 
 def main(args):
@@ -177,16 +227,21 @@ def main(args):
     # Modify markdown content (e.g., remove <img> tags and specified comment)
     cleaned_markdown = process_text(markdown_text)
 
+    # Create CTA button format
+    github_button = format_CTA_button(args.file)
+
     with open(args.file, 'w') as file:
+        file.write(add_import_statement())
         file.write(title)
+        file.write(github_button)
         file.write(cleaned_markdown)
 
+    # Rename markdown file name 
     rename_markdown_file(args.file)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # parser.add_argument("file", nargs="*", help="markdown file to process")
     parser.add_argument("file", help="markdown file to process")
     args = parser.parse_args()
     main(args)
