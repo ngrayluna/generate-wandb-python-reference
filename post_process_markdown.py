@@ -6,9 +6,12 @@ Note: It might be faster to create this doc using the Generator class and load i
 
 TO DO:
 * Add source links to each class, module, etc e.g. #L123. Check note in replace_github_urls
+   * Maybe add a new button? Current implementation (that was removed) is an image. Which doesn't work for us since
+   we have a rule that expands images to the full width of the page. 
 * Remove temp_processing function, this is a hack around not classes not being hidden
 * Automate generating each module
 * Add a Github action to generate the docs each time interfact.py has changes
+* There are some HTML tags in the markdown that probably need to be removed...but the styling looks cool
 """
 import os
 import re
