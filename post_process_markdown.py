@@ -2,9 +2,13 @@
 """
 Quick and dirty Python script to post process output markdown files from lazydocs.
 
-Future:
-This script post processes docs spit out by using lazydocs. It might be faster
-to create this doc using the Generator class and load in modules instead.
+Note: It might be faster to create this doc using the Generator class and load in modules instead.
+
+TO DO:
+* Add source links to each class, module, etc e.g. #L123. Check note in replace_github_urls
+* Remove temp_processing function, this is a hack around not classes not being hidden
+* Automate generating each module
+* Add a Github action to generate the docs each time interfact.py has changes
 """
 import os
 import re
@@ -18,45 +22,6 @@ def markdown_title(filename):
     # Not sure if this should be capitalized or not...
     base_name = os.path.basename(filename).split('.')[1].capitalize()
     return f"# {base_name}\n\n"
-
-
-def fix_imgs(text):
-    """
-    Taken from Weave code
-    """
-    # Images (used for source code tags) are not closed. While many
-    # html parsers handle this, the markdown parser does not. This
-    # function fixes that.
-    # Example:
-    # <img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square">
-    # becomes
-    # <img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" />
-
-    # This regex matches the img tag and captures the attributes
-    # and the src attribute.
-    pattern = r'<img(.*?)(src=".*?")>'
-
-    # This function replaces the match with the same match, but with
-    # a closing slash before the closing bracket.
-    def replace_with_slash(match):
-        return f"<img{match.group(1)}{match.group(2)} />"
-
-    # Replace all occurrences of the pattern with the function
-    text = re.sub(pattern, replace_with_slash, text)
-
-    return text
-
-def fix_style(text):
-    """
-    Taken from Weave code
-    """    
-    # The docgen produces a lot of inline styles, which are not
-    # supported by the markdown parser.
-    find = ' style="float:right;"'
-    replace = ""
-    text = text.replace(find, replace)
-
-    return text
 
 
 def replace_github_urls(text):
@@ -101,6 +66,7 @@ def remove_patterns_from_markdown(markdown_text):
 
 
 def alphabetize_headings(markdown_text):
+    """Alphabetize the classes, etc. in the markdown file."""
     # Split the text into two parts: the module docstring (before the first "---") and the rest
     parts = markdown_text.split('---', 1)
     
@@ -151,6 +117,10 @@ def alphabetize_headings(markdown_text):
 
 
 def temp_processing(content, internal_tag="INTERNAL"):
+    """
+    Remove classes that contain the term 'INTERNAl' in their docstring.
+    This is a temporary fix while we wait to hide these classes.
+    """
     #Keyword to look for in the class docstring
     internal_tag = "INTERNAL"
     
@@ -175,7 +145,7 @@ def temp_processing(content, internal_tag="INTERNAL"):
 
 def process_text(markdown_text):
     """
-    Silly chain of processing. Clean up later
+    Silly chain of processing the markdown text.
     """
     # Separating 'temp_processing' because it is a temporary fix
     markdown_text = alphabetize_headings(replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))))
@@ -190,14 +160,13 @@ def rename_markdown_file(filename):
     module import. For example, workspaces API originally
     has a filename of `workspaces_tmp/wandb_workspaces.workspaces.interface.md`
     """
-
     new_filename = os.path.join(os.path.dirname(filename), os.path.basename(filename).split('.')[1]+".md")
     print(f"Renaming markdown page from {filename} to {new_filename}") 
     os.rename(filename, new_filename)
 
 
 def add_import_statement():
-    # Add CTA import statement
+    """Add import statement for CTAButtons component."""
     return "import { CTAButtons } from '@site/src/components/CTAButtons/CTAButtons.tsx'\n\n"
 
 
@@ -215,6 +184,48 @@ def format_CTA_button(filename, base_url="https://github.com/wandb/wandb-workspa
     href_links = _convert_github_md_to_py_url(os.path.join(base_url, os.path.basename(filename)))
 
     return "<CTAButtons githubLink='"+ href_links + "'/>\n\n"
+
+
+## The following functions are taken from Weave API Docs ## 
+
+def fix_imgs(text):
+    """
+    Taken from Weave code
+    """
+    # Images (used for source code tags) are not closed. While many
+    # html parsers handle this, the markdown parser does not. This
+    # function fixes that.
+    # Example:
+    # <img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square">
+    # becomes
+    # <img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" />
+
+    # This regex matches the img tag and captures the attributes
+    # and the src attribute.
+    pattern = r'<img(.*?)(src=".*?")>'
+
+    # This function replaces the match with the same match, but with
+    # a closing slash before the closing bracket.
+    def replace_with_slash(match):
+        return f"<img{match.group(1)}{match.group(2)} />"
+
+    # Replace all occurrences of the pattern with the function
+    text = re.sub(pattern, replace_with_slash, text)
+
+    return text
+
+
+def fix_style(text):
+    """
+    Taken from Weave code
+    """    
+    # The docgen produces a lot of inline styles, which are not
+    # supported by the markdown parser.
+    find = ' style="float:right;"'
+    replace = ""
+    text = text.replace(find, replace)
+
+    return text
 
 
 def main(args):
