@@ -19,39 +19,6 @@ import argparse
 import glob
 
 
-def markdown_title(filename):
-    """
-    Create markdown title based on the filename read in.
-    """
-    # Not sure if this should be capitalized or not...
-    base_name = os.path.basename(filename).split('.')[0]
-    return f"# {base_name}\n\n"
-
-
-# def replace_github_urls(text):
-#     """
-#     Add the line number to the URL for the GitHub links.
-#     TO DO: This does not properly fix the URL for the first top most pattern.
-#     """
-#     # Define the pattern to match the URLs
-#     pattern = r'(https://github\.com/wandb/wandb-workspaces)/tree/main/(.*?)/([^/]+)#L(\d+)'
-    
-#     # Function to replace the match
-#     def replacer(match):
-#         base_url = match.group(1)
-#         path = match.group(2)
-#         # Extract just the last directory name and remove everything after it
-#         filename = match.group(3)
-#         line_number = match.group(4)
-#         # Construct the new URL
-#         return f"{base_url}/blob/main/{path}.py#L{line_number}"
-    
-#     # Use re.sub with the replacer function
-#     modified_text = re.sub(pattern, replacer, text)
-    
-#     return modified_text
-
-
 def remove_patterns_from_markdown(markdown_text):
     """Remove patterns from the markdown text."""
     module_name_pattern = r'(# <kbd>module</kbd> `[\w\.]+)\.[\w]+`'
@@ -108,27 +75,6 @@ def process_text(markdown_text):
     markdown_text = remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))
     return temp_processing(markdown_text)   
 
-
-
-def add_import_statement():
-    """Add import statement for CTAButtons component."""
-    return "import { CTAButtons } from '@site/src/components/CTAButtons/CTAButtons.tsx'\n\n"
-
-
-def format_CTA_button(filename, base_url="https://github.com/wandb/wandb/tree/main/"):
-    """Add GitHub CTA button to the markdown file."""
-
-    def _convert_github_md_to_py_url(url: str) -> str:
-        # Define the regex pattern to match the URL and the file extension
-        pattern = r"(https://github\.com/.+?/tree/main/)(.+?)\.([\w]+)$"
-        
-        # Replace dots in the path with slashes, change "tree" to "blob", and change ".md" to ".py"
-        result = re.sub(pattern, lambda m: f"{m.group(1).replace('tree', 'blob')}{m.group(2).replace('.', '/')}.py", url)        
-        return result
-
-    href_links = _convert_github_md_to_py_url(os.path.join(base_url, os.path.basename(filename)))
-
-    return "<CTAButtons githubLink='"+ href_links + "'/>\n\n"
 
 
 ## The following functions are taken from Weave API Docs ## 
@@ -188,17 +134,9 @@ def main(args):
         # Modify markdown content (e.g., remove <img> tags and specified comment)
         cleaned_markdown = process_text(markdown_text)
 
-        # Create CTA button format
-        github_button = format_CTA_button(filename)
-
         with open(filename, 'w') as file:
-            file.write(add_import_statement())
-            file.write(title)
-            file.write(github_button)
             file.write(cleaned_markdown)
 
-        # Rename markdown file name 
-        #rename_markdown_file(filename)
 
 
 if __name__ == "__main__":

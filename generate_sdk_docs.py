@@ -61,29 +61,63 @@ def create_public_api_list(module):
     return sorted(list(set(dir_output) and set(__all__)))    
 
 
+def markdown_title(filename):
+    """
+    Create markdown title based on the filename read in.
+    """
+    # Not sure if this should be capitalized or not...
+    base_name = os.path.basename(filename).split('.')[0]
+    return f"# {base_name}\n\n"
+
+
+def add_import_statement():
+    """Add import statement for CTAButtons component."""
+    return "import { CTAButtons } from '@site/src/components/CTAButtons/CTAButtons.tsx'\n\n"
+
+def format_CTA_button(filename, base_url="https://github.com/wandb/wandb/blob/main/wandb"):
+    """Add GitHub CTA button to the markdown file."""
+
+    def _extract_filename_from_path(path: str) -> str:
+        match = re.search(r'wandb/(.*)', path)
+        return match.group(1) if match else None
+
+    href_links = os.path.join(base_url, _extract_filename_from_path(filename))
+
+    return "<CTAButtons githubLink='"+ href_links + "'/>\n\n"
+
+
 def create_class_markdown(obj, module, generator, filename):
     with open(filename, 'w') as file:
+        file.write(add_import_statement())
+        file.write(markdown_title(filename))
+        file.write(format_CTA_button(inspect.getfile(obj)))        
         file.write("\n\n")
         file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1]))
         file.write(generator.class2md(obj))
 
 def create_function_markdown(obj, module, generator, filename):
     with open(filename, 'w') as file:
+        file.write(add_import_statement())
+        file.write(markdown_title(filename))
+        file.write(format_CTA_button(inspect.getfile(obj)))
         file.write("\n\n")
         file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1]))
         file.write(generator.function2md(obj))
 
 
-def check_temp_dir():
+def _check_temp_dir():
     if not os.path.exists('sdk_docs_temp/'):
         os.makedirs('sdk_docs_temp/')
 
 def get_output_markdown_path(api_list_item):
 
-    check_temp_dir()
+    _check_temp_dir()
 
     filename = api_list_item + '.md'
     return os.path.join(os.getcwd(), 'sdk_docs_temp/', filename)
+
+
+
 
 def create_markdown(api_list_item, module, src_base_url):
 
