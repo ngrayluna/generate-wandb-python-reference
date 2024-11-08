@@ -2,12 +2,12 @@
 
 # FUTURE: Create README
 
-# MODULE=wandb_workspaces.workspaces.interface
-MODULE=wandb_workspaces.reports.v2.interface
+MODULE=wandb_workspaces.workspaces.interface
+# MODULE=wandb_workspaces.reports.v2.interface
 TMP_DIR=workspaces_tmp
 
 # Specify docodile dir (i.e. docodile/docs/ref/python/wandb_workspaces/)
-DIR=""
+DIR="/Users/noahluna/Desktop/docodile/docs/ref/python/wandb_workspaces"
 
 # Create initial doc
 lazydocs --output-path=./$TMP_DIR $MODULE --src-base-url="https://github.com/wandb/wandb-workspaces/tree/main"
