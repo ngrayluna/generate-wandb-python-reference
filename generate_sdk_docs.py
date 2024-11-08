@@ -74,20 +74,34 @@ def create_function_markdown(obj, module, generator, filename):
         file.write(generator.function2md(obj))
 
 
-def create_markdown(api_list, module, src_base_url):
+def check_temp_dir():
+    if not os.path.exists('sdk_docs_temp/'):
+        os.makedirs('sdk_docs_temp/')
 
-    # Testing a single gen object
-    obj = getattr(module, api_list[1])
-    filename = api_list[1] + '.md'
+def get_output_markdown_path(api_list_item):
 
+    check_temp_dir()
+
+    filename = api_list_item + '.md'
+    return os.path.join(os.getcwd(), 'sdk_docs_temp/', filename)
+
+def create_markdown(api_list_item, module, src_base_url):
+
+    # Create output filepath
+    filename = get_output_markdown_path(api_list_item)
+
+    # Get object from module
+    obj = getattr(module, api_list_item)
+    
     # Get generator object
     generator = lazydocs.MarkdownGenerator(src_base_url=src_base_url)
 
+    # Check if object is a class or function
     if str(type(obj)) == "<class 'type'>":
-        print("This is class")
+        print(f"Generating docs for {obj} class")
         create_class_markdown(obj, module, generator, filename=filename)
     elif str(type(obj)) == "<class 'function'>":
-        print("This is function")
+        print(f"Generating docs for {obj} function")
         create_function_markdown(obj, module, generator, filename=filename)
     else:
         print(f"Skipping {obj}")    
@@ -102,8 +116,11 @@ def main():
     # Get list of public APIs
     api_list = create_public_api_list(module)
 
-    # To do: Get api_list from module
-    create_markdown(api_list, module, src_base_url)
+    for i in range(0,10):
+        api_list_item = api_list[i]
+        
+        # To do: Get api_list from module
+        create_markdown(api_list_item, module, src_base_url)
 
 if __name__  == "__main__":
     main()
