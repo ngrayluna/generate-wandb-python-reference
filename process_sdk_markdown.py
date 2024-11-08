@@ -16,6 +16,7 @@ TO DO:
 import os
 import re
 import argparse
+import glob
 
 
 def markdown_title(filename):
@@ -234,30 +235,35 @@ def fix_style(text):
 
 
 def main(args):
-    with open(args.file, 'r') as file:
-        markdown_text = file.read()
 
-    # Get the markdown H1 title, and get the original filename
-    title = markdown_title(args.file)
+    for filename in glob.glob(os.path.join(os.getcwd(), args.output_directory , '*.md')):
 
-    # Modify markdown content (e.g., remove <img> tags and specified comment)
-    cleaned_markdown = process_text(markdown_text)
+        print(f"Reading in {filename}...")
 
-    # Create CTA button format
-    github_button = format_CTA_button(args.file)
+        with open(filename, 'r') as file:
+            markdown_text = file.read()
 
-    with open(args.file, 'w') as file:
-        file.write(add_import_statement())
-        file.write(title)
-        file.write(github_button)
-        file.write(cleaned_markdown)
+        # Get the markdown H1 title, and get the original filename
+        title = markdown_title(filename)
 
-    # Rename markdown file name 
-    #rename_markdown_file(args.file)
+        # Modify markdown content (e.g., remove <img> tags and specified comment)
+        cleaned_markdown = process_text(markdown_text)
+
+        # Create CTA button format
+        github_button = format_CTA_button(filename)
+
+        with open(filename, 'w') as file:
+            file.write(add_import_statement())
+            file.write(title)
+            file.write(github_button)
+            file.write(cleaned_markdown)
+
+        # Rename markdown file name 
+        #rename_markdown_file(filename)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("file", help="markdown file to process")
+    parser.add_argument("--output_directory", default="sdk_docs_temp", help="markdown file to process")
     args = parser.parse_args()
     main(args)
