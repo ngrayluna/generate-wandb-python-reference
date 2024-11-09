@@ -1,13 +1,15 @@
 # Generate Workspaces API
 
-Scripts that generates Workspaces API markdown docs. Entrypoint is the `testing.sh` bash script. This generates markdown files with `lazydocs` and then calls the `generate_api.py` script to post process the final markdown files.
+Scripts that generated markdown docs for Workspaces API and broader W&B Python API documentation.
 
-```note
-This repo is still in early stages of development. Expect potentially breaking changes.
-```
+Use the shell script `testing.sh` to generate the Workspace markdown files. Use sdk_testing.sh to generate the wandb reference markdown files.
 
-Usage:
+
+For example, to generate the wandb reference markdown files, run:
 
 ```bash
-bash testing.sh
+bash sdk_testing.sh
 ```
+
+
+Note that this repo is in active development. It's currently only in use for internal testing and development.
