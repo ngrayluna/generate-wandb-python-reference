@@ -78,8 +78,9 @@ def format_CTA_button(filename, base_url="https://github.com/wandb/wandb/blob/ma
     """Add GitHub CTA button to the markdown file."""
 
     def _extract_filename_from_path(path: str) -> str:
-        match = re.search(r'wandb/(.*)', path)
-        return match.group(1) if match else None
+        # Only get path after "wandb/" in the URL
+        _, _, wandb_path = path.partition("wandb/")
+        return wandb_path
 
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
 
