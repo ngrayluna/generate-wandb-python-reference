@@ -128,9 +128,6 @@ def main(args):
         with open(filename, 'r') as file:
             markdown_text = file.read()
 
-        # Get the markdown H1 title, and get the original filename
-        title = markdown_title(filename)
-
         # Modify markdown content (e.g., remove <img> tags and specified comment)
         cleaned_markdown = process_text(markdown_text)
 

@@ -92,7 +92,7 @@ def create_class_markdown(obj, module, generator, filename):
         file.write(markdown_title(filename))
         file.write(format_CTA_button(inspect.getfile(obj)))        
         file.write("\n\n")
-        file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1]))
+        # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
         file.write(generator.class2md(obj))
 
 def create_function_markdown(obj, module, generator, filename):
@@ -101,7 +101,7 @@ def create_function_markdown(obj, module, generator, filename):
         file.write(markdown_title(filename))
         file.write(format_CTA_button(inspect.getfile(obj)))
         file.write("\n\n")
-        file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1]))
+        # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
         file.write(generator.function2md(obj))
 
 
