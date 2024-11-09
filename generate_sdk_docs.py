@@ -6,7 +6,7 @@ import inspect
 import wandb 
 import lazydocs
 
-# To do, import this from pyi
+# TO DO: import this from pyi
 __all__ = (
     "__version__",
     "init",
@@ -52,14 +52,12 @@ __all__ = (
 )
 
 
-
 def create_public_api_list(module):
     # Remove any from list that are supposed to be hidden
     dir_output = [name for name in dir(module) if not name.startswith('_')]
 
     # Return alphabetize the list
     return sorted(list(set(dir_output) and set(__all__)))    
-
 
 def markdown_title(filename):
     """
@@ -68,7 +66,6 @@ def markdown_title(filename):
     # Not sure if this should be capitalized or not...
     base_name = os.path.basename(filename).split('.')[0]
     return f"# {base_name}\n\n"
-
 
 def add_import_statement():
     """Add import statement for CTAButtons component."""
@@ -85,7 +82,6 @@ def format_CTA_button(filename, base_url="https://github.com/wandb/wandb/blob/ma
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
 
     return "<CTAButtons githubLink='"+ href_links + "'/>\n\n"
-
 
 def create_class_markdown(obj, module, generator, filename):
     with open(filename, 'w') as file:
@@ -105,23 +101,20 @@ def create_function_markdown(obj, module, generator, filename):
         # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
         file.write(generator.function2md(obj))
 
-
 def _check_temp_dir():
+    # Check if temporary directory exists
     if not os.path.exists('sdk_docs_temp/'):
         os.makedirs('sdk_docs_temp/')
 
 def get_output_markdown_path(api_list_item):
-
+    # Store generated files in sdk_docs_temp directory
+    # This directory is used by process_sdk_markdown.py
     _check_temp_dir()
 
     filename = api_list_item + '.md'
     return os.path.join(os.getcwd(), 'sdk_docs_temp/', filename)
 
-
-
-
 def create_markdown(api_list_item, module, src_base_url):
-
     # Create output filepath
     filename = get_output_markdown_path(api_list_item)
 
@@ -142,9 +135,7 @@ def create_markdown(api_list_item, module, src_base_url):
         print(f"Skipping {obj}")    
 
 
-
 def main():
-
     module = wandb
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
     
