@@ -99,7 +99,7 @@ def create_function_markdown(obj, module, generator, filename):
         file.write(format_CTA_button(inspect.getfile(obj)))
         file.write("\n\n")
         # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
-        file.write(generator.function2md(obj))
+        file.write(generator.func2md(obj))
 
 def _check_temp_dir():
     # Check if temporary directory exists
@@ -142,11 +142,9 @@ def main():
     # Get list of public APIs
     api_list = create_public_api_list(module)
 
-    for i in range(0,10):
-        api_list_item = api_list[i]
-        
-        # To do: Get api_list from module
-        create_markdown(api_list_item, module, src_base_url)
+    # To do: Get api_list from module
+    for api in api_list:
+        create_markdown(api, module, src_base_url)
 
 if __name__  == "__main__":
     main()
