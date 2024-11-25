@@ -121,7 +121,7 @@ def main(args):
 
     for filename in glob.glob(os.path.join(os.getcwd(), args.output_directory , '*.md')):
 
-        print(f"Reading in {filename}...")
+        print(f"Reading in {filename} for processing...")
 
         with open(filename, 'r') as file:
             markdown_text = file.read()
