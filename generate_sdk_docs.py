@@ -59,20 +59,13 @@ def create_public_api_list(module):
     # Return alphabetize the list
     return sorted(list(set(dir_output) and set(__all__)))    
 
-def markdown_title(filename):
-    """
-    Create markdown title based on the filename read in.
-    """
-    # Not sure if this should be capitalized or not...
-    base_name = os.path.basename(filename).split('.')[0]
-    return f"# {base_name}\n\n"
 
-def add_import_statement():
-    """Add import statement for CTAButtons component."""
-    return "import { CTAButtons } from '@site/src/components/CTAButtons/CTAButtons.tsx'\n\n"
+def _github_button(href_links):
+    """To do: Add hugo scripting to add this function. For now, just add code line # for debugging."""
+    return href_links + "\n\n"
 
-def format_CTA_button(filename, base_url="https://github.com/wandb/wandb/blob/main/wandb"):
-    """Add GitHub CTA button to the markdown file."""
+def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob/main/wandb"):
+    """Add GitHub button to the markdown file."""
 
     def _extract_filename_from_path(path: str) -> str:
         # Only get path after "wandb/" in the URL
@@ -80,23 +73,27 @@ def format_CTA_button(filename, base_url="https://github.com/wandb/wandb/blob/ma
         return wandb_path
 
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
+    return _github_button(href_links)
 
-    return "<CTAButtons githubLink='"+ href_links + "'/>\n\n"
+
+def add_frontmatter(filename):
+    """Add frontmatter to the markdown file."""
+    base_name = os.path.basename(filename).split('.')[0]
+    return f"---\ntitle: {base_name}\n---\n\n"
+
 
 def create_class_markdown(obj, module, generator, filename):
     with open(filename, 'w') as file:
-        file.write(add_import_statement())
-        file.write(markdown_title(filename))
-        file.write(format_CTA_button(inspect.getfile(obj)))        
+        file.write(add_frontmatter(filename))
+        file.write(format_github_button(inspect.getfile(obj)))        
         file.write("\n\n")
         # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
         file.write(generator.class2md(obj))
 
 def create_function_markdown(obj, module, generator, filename):
     with open(filename, 'w') as file:
-        file.write(add_import_statement())
-        file.write(markdown_title(filename))
-        file.write(format_CTA_button(inspect.getfile(obj)))
+        file.write(add_frontmatter(filename))
+        file.write(format_github_button(inspect.getfile(obj)))
         file.write("\n\n")
         # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
         file.write(generator.func2md(obj))
