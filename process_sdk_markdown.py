@@ -6,8 +6,6 @@ Note: It might be faster to create this doc using the Generator class and load i
 
 TO DO:
 * Add source links to each class, module, etc e.g. #L123. Check note in replace_github_urls
-   * Maybe add a new button? Current implementation (that was removed) is an image. Which doesn't work for us since
-   we have a rule that expands images to the full width of the page. 
 * Remove temp_processing function, this is a hack around not classes not being hidden
 * There are some HTML tags in the markdown that probably need to be removed...but the styling looks cool
 """
@@ -15,6 +13,11 @@ import os
 import re
 import argparse
 import glob
+
+def remote_init_sections(markdown_text):
+    raw_pattern = r"### <kbd>method</kbd> `.*?__init__.*?```.*?```" # Match `__init__` sections
+    init_pattern = re.compile(raw_pattern, re.DOTALL)
+    return init_pattern.sub("", markdown_text)
 
 
 def remove_patterns_from_markdown(markdown_text):
@@ -30,6 +33,9 @@ def remove_patterns_from_markdown(markdown_text):
     cleaned_text = re.sub(base_class_pattern, '', cleaned_text).strip()
     cleaned_text = re.sub(bold_tags_pattern, r'\1', cleaned_text)
     cleaned_text = re.sub(footer_pattern, '', cleaned_text).strip()
+
+    # Remove `__init__` sections
+    cleaned_text = remote_init_sections(cleaned_text)
 
     return cleaned_text
 
@@ -64,10 +70,8 @@ def temp_processing(content, internal_tag="INTERNAL"):
 
 def process_text(markdown_text):
     """
-    Silly chain of processing the markdown text.
+    Silly chain of processing the markdown text. Clean up later.
     """
-    # OLD
-    # markdown_text = alphabetize_headings(replace_github_urls(remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))))
 
     # Separating 'temp_processing' because it is a temporary fix
     markdown_text = remove_patterns_from_markdown(fix_style(fix_imgs(markdown_text)))
