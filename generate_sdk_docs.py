@@ -18,12 +18,11 @@ sys.path.insert(0, str(local_wandb_path))
 # Confirm the correct version of wandb is being used
 import wandb
 print("Using wandb from:", wandb.__file__)
-
 ###### TEMP END ######
 
 
 def get_api_list_from_pyi(file_path):
-    """Get list of public APIs from a .pyi file. Exlude APIs marked with # doc:exclude.
+    """Get list of public APIs from a .pyi file. Exclude APIs marked with # doc:exclude.
 
     Args:
         file_path (str): Path to the .pyi file.
@@ -66,6 +65,11 @@ def get_api_list_from_pyi(file_path):
 
     return filtered_items
 
+def add_frontmatter(filename):
+    """Add frontmatter to the markdown file."""
+    base_name = os.path.basename(filename).split('.')[0]
+    return f"---\ntitle: {base_name}\n---\n\n"
+
 def _github_button(href_links):
     """To do: Add hugo scripting to add this function. For now, just add code line # for debugging."""
     return f"{{< github_button href={href_links} >}}"+ "\n\n"
@@ -80,13 +84,6 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
 
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
-
-
-def add_frontmatter(filename):
-    """Add frontmatter to the markdown file."""
-    base_name = os.path.basename(filename).split('.')[0]
-    return f"---\ntitle: {base_name}\n---\n\n"
-
 
 def create_class_markdown(obj, module, generator, filename):
     with open(filename, 'w') as file:
