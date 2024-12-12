@@ -72,7 +72,8 @@ def add_frontmatter(filename):
 
 def _github_button(href_links):
     """To do: Add hugo scripting to add this function. For now, just add code line # for debugging."""
-    return f"{{< github_button href={href_links} >}}"+ "\n\n"
+    # return f"{{< github_button href={href_links} >}}"+ "\n\n"
+    return "{{< github_button href=" + href_links + " >}}"+ "\n\n"    
 
 def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob/main/wandb"):
     """Add GitHub button to the markdown file."""
