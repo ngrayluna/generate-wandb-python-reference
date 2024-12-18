@@ -115,16 +115,17 @@ def get_output_markdown_path(api_list_item):
     filename = api_list_item + '.md'
     return os.path.join(os.getcwd(), 'sdk_docs_temp/', filename)
 
+def create_generator(src_base_url):
+    return lazydocs.MarkdownGenerator(src_base_url=src_base_url)
 
-def create_markdown(api_list_item, module, src_base_url):
+
+def create_markdown(api_list_item, module, generator):
     # Create output filepath
     filename = get_output_markdown_path(api_list_item)
 
     # Get object from module
     obj = getattr(module, api_list_item)
     
-    # Get generator object
-    generator = lazydocs.MarkdownGenerator(src_base_url=src_base_url)
 
     # Check if object is a class or function
     if str(type(obj)) == "<class 'type'>":
@@ -144,9 +145,15 @@ def main():
     # Get list of public APIs
     api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
 
+    generator = create_generator(src_base_url)
+
     # To do: Get api_list from module
     for api in api_list:
-        create_markdown(api, module, src_base_url)
+        create_markdown(api, module, generator)
+
+    # Generate overview markdown
+    with open(os.path.join(os.getcwd(), 'sdk_docs_temp/', "README.md"), 'w') as file:
+        file.write(generator.overview2md())
 
 if __name__  == "__main__":
     main()
