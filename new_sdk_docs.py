@@ -186,40 +186,47 @@ def create_markdown(docodile, generator):
 
 
 def check_temp_dir(temp_output_dir):
-    """Check if temporary directory exists."""
+    """Check if temporary directory exists.
+    
+    Args:
+        temp_output_dir (str): Name of the temporary output directory.
+    """
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
 
 
-def main():
+def main(args):
     module = wandb
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
-    temp_output_dir = "new_sdk_docs_temp"
     valid_object_types = ["class", "function"]
 
-    # Check if temporary directory exists
-    check_temp_dir(temp_output_dir)
+    # Check if temporary directory exists. We use this directory to store generated markdown files.
+    # A second script will process these files to clean them up.
+    check_temp_dir(args.temp_output_directory)
 
-    # Create MarkdownGenerator object. We use the same generator for all APIs.
+    # Create MarkdownGenerator object. We use the same generator object for all APIs.
     generator = MarkdownGenerator(src_base_url=src_base_url)
 
-    # Get list of public APIs
+    # Get list of public APIs. Exclude APIs marked with # doc:exclude.
     api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
 
-    # Get list of public APIs from a .pyi file. Exclude APIs marked with # doc:exclude.
+    # Generate markdown files for each API
     for api_list_item in api_list:
 
         # Create Docodile object
-        docodile = DocodileMaker(module, api_list_item, temp_output_dir)
+        docodile = DocodileMaker(module, api_list_item, args.temp_output_directory)
 
+        # Check if object type defined in source code is valid
         if docodile.object_type in valid_object_types:
             # Create markdown file for the API
             create_markdown(docodile, generator)
-
 
     # Generate overview markdown
     # with open(os.path.join(os.getcwd(), 'sdk_docs_temp/', "README.md"), 'w') as file:
     #     file.write(generator.overview2md())
 
 if __name__  == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--temp_output_directory", default="new_sdk_docs_temp", help="directory where the markdown files to process exist")
+    args = parser.parse_args()
+    main(args)
