@@ -21,12 +21,14 @@ print("Using wandb from:", wandb.__file__)
 ###### TEMP END ######
 
 class DocodileMaker:
-    def __init__(self, module, api):
+    def __init__(self, module, api, output_dir):
         self.module = module
         self.api_item = api
+        self.output_dir = output_dir
         self._object_attribute = None
         self._object_type = None
         self._file_path = None
+        self._filename = None
 
     def _ensure_object_attribute(self):
         """Ensure `_object_attribute` is initialized."""
@@ -34,6 +36,7 @@ class DocodileMaker:
             self._object_attribute = getattr(self.module, self.api_item)
             self._update_object_type()
             self._update_file_path()
+            self._update_filename()
 
     def _update_object_type(self):
         """Determine the type of the object."""
@@ -52,6 +55,10 @@ class DocodileMaker:
         except TypeError:
             self._file_path = None  # Handle cases where `inspect.getfile()` fails.
 
+    def _update_filename(self):
+        """Determine the filename of the object."""
+        self._filename = os.path.join(os.getcwd(), self.output_dir, self.api_item + ".md")  
+
     @property
     def object_attribute_value(self):
         self._ensure_object_attribute()
@@ -69,6 +76,12 @@ class DocodileMaker:
         # if self._file_path is None:
         #     raise ValueError("File path is not available for the specified object.")
         return self._file_path
+    
+    @property
+    def filename(self):
+        self._ensure_object_attribute()
+        return self._filename
+
 
 def get_api_list_from_pyi(file_path):
     """Get list of public APIs from a .pyi file. Exclude APIs marked with # doc:exclude.
@@ -114,17 +127,6 @@ def get_api_list_from_pyi(file_path):
 
     return filtered_items
 
-def get_output_markdown_path(api_list_item, temp_output_dir):
-    """Create temporary output filepath to store markdown files.
-    
-    Args:
-        api_list_item (str): API item name.
-        temp_output_dir (str): Temporary output directory.
-    """
-    # Store generated files in sdk_docs_temp directory
-    # This directory is used by process_sdk_markdown.py
-    filename = api_list_item + '.md'
-    return os.path.join(os.getcwd(), temp_output_dir, filename)  
 
 def add_frontmatter(filename):
     """Add frontmatter to the markdown file.
@@ -158,7 +160,7 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
 
-def create_markdown(docodile, generator, filename):
+def create_markdown(docodile, generator):
     """Create markdown file for the API.
     
     Args:
@@ -166,21 +168,27 @@ def create_markdown(docodile, generator, filename):
         generator (MarkdownGenerator): Markdown generator object.
         filename (str): Name of the file.
     """
+    print("Opening file:", docodile.filename)
 
-    with open(filename, 'w') as file:
-        file.write(add_frontmatter(filename))
+    with open(docodile.filename, 'w') as file:
+        file.write(add_frontmatter(docodile.filename))
         file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
 
         if docodile.object_type == "class":
-            print("Creating class markdown")
+            print("Creating class markdown", "\n\n")
             file.write(generator.class2md(docodile.object_attribute_value))
         elif docodile.object_type == "function":
-            print("Creating function markdown")
+            print("Creating function markdown", "\n\n")
             file.write(generator.func2md(docodile.object_attribute_value))
         else:
             print("No doc generator for this object type")
 
+
+def check_temp_dir(temp_output_dir):
+    """Check if temporary directory exists."""
+    if not os.path.exists(temp_output_dir):
+        os.makedirs(temp_output_dir)
 
 
 def main():
@@ -190,9 +198,9 @@ def main():
     valid_object_types = ["class", "function"]
 
     # Check if temporary directory exists
-    if not os.path.exists(temp_output_dir):
-        os.makedirs(temp_output_dir)
+    check_temp_dir(temp_output_dir)
 
+    # Create MarkdownGenerator object. We use the same generator for all APIs.
     generator = MarkdownGenerator(src_base_url=src_base_url)
 
     # Get list of public APIs
@@ -200,16 +208,13 @@ def main():
 
     # Get list of public APIs from a .pyi file. Exclude APIs marked with # doc:exclude.
     for api_list_item in api_list:
-        # Create temporary output filepath to store markdown files
-        # We will use this directory in process_sdk_markdown.py
-        output_path = get_output_markdown_path(api_list_item, temp_output_dir)
 
         # Create Docodile object
-        docodile = DocodileMaker(module, api_list_item)
+        docodile = DocodileMaker(module, api_list_item, temp_output_dir)
 
         if docodile.object_type in valid_object_types:
             # Create markdown file for the API
-            create_markdown(docodile, generator, output_path)
+            create_markdown(docodile, generator)
 
 
     # Generate overview markdown
