@@ -1,4 +1,4 @@
-# Generate W&B Pytyhon SDK
+# Generate W&B Python SDK
 
 Scripts that generated markdown docs for Workspaces API and broader W&B Python API documentation.
 

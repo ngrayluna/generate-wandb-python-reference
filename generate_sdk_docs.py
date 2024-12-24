@@ -235,8 +235,8 @@ def main(args):
             create_markdown(docodile, generator)
 
     # Generate overview markdown
-    # with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
-    #     file.write(generator.overview2md())
+    with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
+        file.write(generator.overview2md())
 
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()
