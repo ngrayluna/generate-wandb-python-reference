@@ -1,4 +1,9 @@
 #!/bin/usr/python
+
+###
+# To do: add object.filepath logic to move datatypes into a subdirectory
+###
+
 import os
 import re
 import inspect
@@ -129,14 +134,24 @@ def get_api_list_from_pyi(file_path):
     return filtered_items
 
 
-def add_frontmatter(filename):
+def _title_key_string(docodile):
+    base_name = os.path.basename(docodile.filename).split('.')[0]
+    return f"title: {base_name}\n"
+
+def _type_key_string(docodile):
+    if "data_type" in docodile.getfile_path:
+        return f"object_type: data_type\n"
+    else:
+        return f"object_type: api\n"
+
+def add_frontmatter(docodile):
     """Add frontmatter to the markdown file.
     
     Args:
         filename (str): Name of the file.
     """
-    base_name = os.path.basename(filename).split('.')[0]
-    return f"---\ntitle: {base_name}\n---\n\n"
+    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + "---\n\n"
+
 
 def _github_button(href_links):
     """To do: Add hugo scripting to add this function. For now, just add code line # for debugging.
@@ -173,7 +188,7 @@ def create_markdown(docodile, generator):
     print("Opening file:", docodile.filename)
 
     with open(docodile.filename, 'w') as file:
-        file.write(add_frontmatter(docodile.filename))
+        file.write(add_frontmatter(docodile))
         file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
 
