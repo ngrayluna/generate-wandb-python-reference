@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 TEMP_DIR=wandb_sdk_docs
 DESTINATION_DIR=python-library
 HUGO_DIR=

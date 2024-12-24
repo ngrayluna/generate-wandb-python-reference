@@ -1,24 +1,88 @@
-#! /bin/usr/python
+#!/bin/usr/python
+
 import os
 import re
 import inspect
+import argparse
 
-import lazydocs
-
-###### TEMP USE LOCAL VERSION OF WANDB for debugging ######
-import sys
-import pydantic
-from pathlib import Path
-# Path to the local version of the `wandb` package
-local_wandb_path = Path("/Users/noahluna/Documents/GitHub/wandb")
-
-# Add the local package path to sys.path
-sys.path.insert(0, str(local_wandb_path))
-
-# Confirm the correct version of wandb is being used
 import wandb
-print("Using wandb from:", wandb.__file__)
-###### TEMP END ######
+from lazydocs import MarkdownGenerator
+
+###### USE LOCAL VERSION OF WANDB for debugging ######
+# import sys
+# from pathlib import Path
+# # Path to the local version of the `wandb` package
+# local_wandb_path = Path("path/to/local/wandb")
+
+# # Add the local package path to sys.path
+# sys.path.insert(0, str(local_wandb_path))
+
+# # Confirm the correct version of wandb is being used
+# import wandb
+# print("Using wandb from:", wandb.__file__)
+###### END ######
+
+class DocodileMaker:
+    def __init__(self, module, api, output_dir):
+        self.module = module
+        self.api_item = api
+        self.output_dir = output_dir
+        self._object_attribute = None
+        self._object_type = None
+        self._file_path = None
+        self._filename = None
+
+    def _ensure_object_attribute(self):
+        """Ensure `_object_attribute` is initialized."""
+        if self._object_attribute is None:
+            self._object_attribute = getattr(self.module, self.api_item)
+            self._update_object_type()
+            self._update_file_path()
+            self._update_filename()
+
+    def _update_object_type(self):
+        """Determine the type of the object."""
+        attr_type = str(type(self._object_attribute))
+        if attr_type == "<class 'type'>":
+            self._object_type = "class"
+        elif attr_type == "<class 'function'>":
+            self._object_type = "function"
+        else:
+            self._object_type = "other"
+
+    def _update_file_path(self):
+        """Determine the file path of the object."""
+        try:
+            self._file_path = inspect.getfile(self._object_attribute)
+        except TypeError:
+            self._file_path = None  # Handle cases where `inspect.getfile()` fails.
+
+    def _update_filename(self):
+        """Determine the filename of the object."""
+        self._filename = os.path.join(os.getcwd(), self.output_dir, self.api_item + ".md")  
+
+    @property
+    def object_attribute_value(self):
+        self._ensure_object_attribute()
+        return self._object_attribute
+
+    @property
+    def object_type(self):
+        self._ensure_object_attribute()
+        return self._object_type
+
+    @property
+    def getfile_path(self):
+        self._ensure_object_attribute()
+        print("File path:", self._file_path)
+        # if self._file_path is None:
+        #     raise ValueError("File path is not available for the specified object.")
+        return self._file_path
+    
+    @property
+    def filename(self):
+        self._ensure_object_attribute()
+        return self._filename
 
 
 def get_api_list_from_pyi(file_path):
@@ -65,19 +129,42 @@ def get_api_list_from_pyi(file_path):
 
     return filtered_items
 
-def add_frontmatter(filename):
-    """Add frontmatter to the markdown file."""
-    base_name = os.path.basename(filename).split('.')[0]
-    return f"---\ntitle: {base_name}\n---\n\n"
+
+def _title_key_string(docodile):
+    base_name = os.path.basename(docodile.filename).split('.')[0]
+    return f"title: {base_name}\n"
+
+def _type_key_string(docodile):
+    if "data_type" in docodile.getfile_path:
+        return f"object_type: data_type\n"
+    else:
+        return f"object_type: api\n"
+
+def add_frontmatter(docodile):
+    """Add frontmatter to the markdown file.
+    
+    Args:
+        filename (str): Name of the file.
+    """
+    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + "---\n\n"
+
 
 def _github_button(href_links):
-    """To do: Add hugo scripting to add this function. For now, just add code line # for debugging."""
-    # return f"{{< github_button href={href_links} >}}"+ "\n\n"
-    return "{{< github_button href=" + href_links + " >}}"+ "\n\n"    
+    """To do: Add hugo scripting to add this function. For now, just add code line # for debugging.
+    
+    Args:
+        href_links (str): URL for the GitHub button.
+    """
+    return "{{< cta-button githubLink=" + href_links + " >}}"+ "\n\n"
+
 
 def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob/main/wandb"):
-    """Add GitHub button to the markdown file."""
-
+    """Add GitHub button to the markdown file.
+    
+    Args:
+        filename (str): Name of the file.
+        base_url (str): Base URL for the GitHub button.
+    """
     def _extract_filename_from_path(path: str) -> str:
         # Only get path after "wandb/" in the URL
         _, _, wandb_path = path.partition("wandb/")
@@ -86,74 +173,73 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
 
-def create_class_markdown(obj, module, generator, filename):
-    with open(filename, 'w') as file:
-        file.write(add_frontmatter(filename))
-        file.write(format_github_button(inspect.getfile(obj)))        
-        file.write("\n\n")
-        # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
-        file.write(generator.class2md(obj))
-
-def create_function_markdown(obj, module, generator, filename):
-    with open(filename, 'w') as file:
-        file.write(add_frontmatter(filename))
-        file.write(format_github_button(inspect.getfile(obj)))
-        file.write("\n\n")
-        # file.write( 'source code line ' +  str(inspect.getsourcelines(obj)[1])) # In the future, add this to the markdown file
-        file.write(generator.func2md(obj))
-
-def _check_temp_dir():
-    # Check if temporary directory exists
-    if not os.path.exists('sdk_docs_temp/'):
-        os.makedirs('sdk_docs_temp/')
-
-def get_output_markdown_path(api_list_item):
-    # Store generated files in sdk_docs_temp directory
-    # This directory is used by process_sdk_markdown.py
-    _check_temp_dir()
-
-    filename = api_list_item + '.md'
-    return os.path.join(os.getcwd(), 'sdk_docs_temp/', filename)
-
-def create_generator(src_base_url):
-    return lazydocs.MarkdownGenerator(src_base_url=src_base_url)
-
-
-def create_markdown(api_list_item, module, generator):
-    # Create output filepath
-    filename = get_output_markdown_path(api_list_item)
-
-    # Get object from module
-    obj = getattr(module, api_list_item)
+def create_markdown(docodile, generator):
+    """Create markdown file for the API.
     
+    Args:
+        docodile (DocodileMaker): Docodile object.
+        generator (MarkdownGenerator): Markdown generator object.
+        filename (str): Name of the file.
+    """
+    print("Opening file:", docodile.filename)
 
-    # Check if object is a class or function
-    if str(type(obj)) == "<class 'type'>":
-        print(f"Generating docs for {obj} class", str(type(obj)))
-        create_class_markdown(obj, module, generator, filename=filename)
-    elif str(type(obj)) == "<class 'function'>":
-        print(f"Generating docs for {obj} function", str(type(obj)))
-        create_function_markdown(obj, module, generator, filename=filename)
-    else:
-        print(f"Skipping {obj}", str(type(obj)))   
+    with open(docodile.filename, 'w') as file:
+        file.write(add_frontmatter(docodile))
+        file.write(format_github_button(docodile.getfile_path))
+        file.write("\n\n")
+
+        if docodile.object_type == "class":
+            print("Creating class markdown", "\n\n")
+            file.write(generator.class2md(docodile.object_attribute_value))
+        elif docodile.object_type == "function":
+            print("Creating function markdown", "\n\n")
+            file.write(generator.func2md(docodile.object_attribute_value))
+        else:
+            print("No doc generator for this object type")
 
 
-def main():
+def check_temp_dir(temp_output_dir):
+    """Check if temporary directory exists.
+    
+    Args:
+        temp_output_dir (str): Name of the temporary output directory.
+    """
+    if not os.path.exists(temp_output_dir):
+        os.makedirs(temp_output_dir)
+
+
+def main(args):
     module = wandb
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
-    
-    # Get list of public APIs
+    valid_object_types = ["class", "function"]
+
+    # Check if temporary directory exists. We use this directory to store generated markdown files.
+    # A second script will process these files to clean them up.
+    check_temp_dir(args.temp_output_directory)
+
+    # Create MarkdownGenerator object. We use the same generator object for all APIs.
+    generator = MarkdownGenerator(src_base_url=src_base_url)
+
+    # Get list of public APIs. Exclude APIs marked with # doc:exclude.
     api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
 
-    generator = create_generator(src_base_url)
+    # Generate markdown files for each API
+    for api_list_item in api_list:
 
-    # To do: Get api_list from module
-    for api in api_list:
-        create_markdown(api, module, generator)
+        # Create Docodile object
+        docodile = DocodileMaker(module, api_list_item, args.temp_output_directory)
+
+        # Check if object type defined in source code is valid
+        if docodile.object_type in valid_object_types:
+            # Create markdown file for the API
+            create_markdown(docodile, generator)
 
     # Generate overview markdown
-    with open(os.path.join(os.getcwd(), 'sdk_docs_temp/', "README.md"), 'w') as file:
-        file.write(generator.overview2md())
+    # with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
+    #     file.write(generator.overview2md())
 
 if __name__  == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--temp_output_directory", default="wandb_sdk_docs", help="directory where the markdown files to process exist")
+    args = parser.parse_args()
+    main(args)
