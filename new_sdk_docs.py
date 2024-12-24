@@ -1,9 +1,5 @@
 #!/bin/usr/python
 
-###
-# To do: add object.filepath logic to move datatypes into a subdirectory
-###
-
 import os
 import re
 import inspect
@@ -239,11 +235,11 @@ def main(args):
             create_markdown(docodile, generator)
 
     # Generate overview markdown
-    # with open(os.path.join(os.getcwd(), 'sdk_docs_temp/', "README.md"), 'w') as file:
+    # with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
     #     file.write(generator.overview2md())
 
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--temp_output_directory", default="new_sdk_docs_temp", help="directory where the markdown files to process exist")
+    parser.add_argument("--temp_output_directory", default="wandb_sdk_docs", help="directory where the markdown files to process exist")
     args = parser.parse_args()
     main(args)

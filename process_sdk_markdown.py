@@ -72,6 +72,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_directory", default="sdk_docs_temp", help="directory where the markdown files to process exist")
+    parser.add_argument("--output_directory", default="wandb_sdk_docs", help="directory where the markdown files to process exist")
     args = parser.parse_args()
     main(args)
