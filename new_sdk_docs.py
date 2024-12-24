@@ -2,22 +2,23 @@
 import os
 import re
 import inspect
+import argparse
 
+import wandb
 from lazydocs import MarkdownGenerator
 
 ###### TEMP USE LOCAL VERSION OF WANDB for debugging ######
-import sys
-import pydantic
-from pathlib import Path
-# Path to the local version of the `wandb` package
-local_wandb_path = Path("/Users/noahluna/Documents/GitHub/wandb")
+# import sys
+# from pathlib import Path
+# # Path to the local version of the `wandb` package
+# local_wandb_path = Path("/Users/noahluna/Documents/GitHub/wandb")
 
-# Add the local package path to sys.path
-sys.path.insert(0, str(local_wandb_path))
+# # Add the local package path to sys.path
+# sys.path.insert(0, str(local_wandb_path))
 
-# Confirm the correct version of wandb is being used
-import wandb
-print("Using wandb from:", wandb.__file__)
+# # Confirm the correct version of wandb is being used
+# import wandb
+# print("Using wandb from:", wandb.__file__)
 ###### TEMP END ######
 
 class DocodileMaker:
@@ -143,7 +144,8 @@ def _github_button(href_links):
     Args:
         href_links (str): URL for the GitHub button.
     """
-    return "{{< github_button href=" + href_links + " >}}"+ "\n\n"    
+    return "{{< cta-button githubLink=" + href_links + " >}}"+ "\n\n"
+
 
 def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob/main/wandb"):
     """Add GitHub button to the markdown file.
