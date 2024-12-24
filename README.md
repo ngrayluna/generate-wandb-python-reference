@@ -2,6 +2,9 @@
 
 Scripts that generated markdown docs for Workspaces API and broader W&B Python API documentation.
 
+![lazydocs_demo](https://github.com/user-attachments/assets/33e160f9-bd8d-475a-8a9b-82ee10027805)
+
+
 ## Create W&B Python SDK Docs
 
 The entrypoint for generating the W&B Python SDK docs is the `create_wandb_sdk_docs.sh` script. 
