@@ -11,7 +11,6 @@ import argparse
 
 def create_landing_page(root_directory):
 
-
     # Check if the directory exists
     for dirpath, dirnames, filenames in os.walk(root_directory):
         if '_index.md' in filenames:
@@ -25,17 +24,17 @@ def create_landing_page(root_directory):
 def create_index_file(filepath):
     # Create _index.md and add header
     index_file = os.path.join(filepath, "_index.md")
+
+    # Create title from directory name
+    new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+
     with open(index_file, 'w') as file:
-        file.write("---\ntitle: " + os.path.basename(filepath) + "\n---\n")
+        file.write("---\ntitle: " + new_title + "\n---\n")
     print(f"Created {index_file}")
     return
 
-
 # def check_frontmatter(filepath):
 #     return
-
-
-
 
 def main(args):
     print("\nCreating landing pages for SDK docs...")    
