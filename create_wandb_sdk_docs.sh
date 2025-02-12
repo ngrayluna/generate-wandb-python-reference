@@ -22,8 +22,11 @@ mkdir -p $DESTINATION_DIR
 # Sort and create subdirectories based on API or DataType
 python sort_files.py --source_directory=$TEMP_DIR --destination_directory=$DESTINATION_DIR
 
+# Create _index.md files
+python create_landing_pages.py --source_directory=$DESTINATION_DIR
+
 # Move local file with subdirs to Hugo directory
-echo "Moving files to Hugo directory"
+#echo "Moving files to Hugo directory"
 mv $DESTINATION_DIR $HUGO_DIR
 
 # TO DO: Clean this up
