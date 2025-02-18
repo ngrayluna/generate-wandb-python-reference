@@ -13,8 +13,8 @@ def main(args):
     root_directory = args.destination_directory
 
     # Ensure root and subdir exist
-    api_dir = os.path.join(root_directory, "api")
-    data_type_dir = os.path.join(root_directory, "data_type")
+    api_dir = os.path.join(root_directory, "actions")
+    data_type_dir = os.path.join(root_directory, "data_types")
     os.makedirs(api_dir, exist_ok=True)
     os.makedirs(data_type_dir, exist_ok=True)
 

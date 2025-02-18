@@ -14,8 +14,8 @@ class MarkdownCleaner:
 
     def __init__(self):
         self.patterns: List[Tuple[re.Pattern, str]] = [
-            # Remove `__init__` sections
-            (re.compile(r"### <kbd>method</kbd> `.*?__init__.*?```.*?```", re.DOTALL), ""),
+            # # Remove `__init__` sections
+            # (re.compile(r"### <kbd>method</kbd> `.*?__init__.*?```.*?```", re.DOTALL), ""),
             
             # Remove <a> tags and their content
             (re.compile(r'<a\b[^>]*>(.*?)</a>', re.DOTALL), r'\1'),
@@ -39,12 +39,33 @@ class MarkdownCleaner:
             (re.compile(r'####\s*'), r'### '),
         ]
 
+        self.method_pattern = re.compile(
+            r"(?s)(## <kbd>class</kbd> `.*?`|### <kbd>.*?</kbd> `.*?`)\n\n"
+            r"```python\n.*?\n```\n\n"
+            r".*?(?=\n## |\n### |\Z)"
+        )
+
+
+
+
     def clean_text(self, markdown_text: str) -> str:
         """Apply all cleaning patterns to the given markdown text."""
         cleaned_text = markdown_text
         for pattern, replacement in self.patterns:
             cleaned_text = pattern.sub(replacement, cleaned_text)
+
+        # Remove methods containing `<!-- lazydoc-ignore: internal -->`
+        cleaned_text = self.remove_ignored_methods(cleaned_text)
         return cleaned_text        
+
+
+    def remove_ignored_methods(self, markdown_text: str) -> str:
+        """Removes method blocks containing `<!-- lazydoc-ignore: internal -->`."""
+        def should_remove(match: re.Match) -> str:
+            """Check if method contains `<!-- lazydoc-ignore: internal -->`."""
+            return "" if "<!-- lazydoc-ignore: internal -->" in match.group(0) else match.group(0)
+
+        return self.method_pattern.sub(should_remove, markdown_text)
 
 
 def process_text(markdown_text: str) -> str:
