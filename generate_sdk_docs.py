@@ -5,21 +5,22 @@ import re
 import inspect
 import argparse
 
-import wandb
+# import wandb
 from lazydocs import MarkdownGenerator
 
 ###### USE LOCAL VERSION OF WANDB for debugging ######
-# import sys
-# from pathlib import Path
-# # Path to the local version of the `wandb` package
-# local_wandb_path = Path("path/to/local/wandb")
+import sys
+from pathlib import Path
 
-# # Add the local package path to sys.path
-# sys.path.insert(0, str(local_wandb_path))
+# Path to the local version of the `wandb` package
+local_wandb_path = Path("/Users/noahluna/Documents/GitHub/wandb")
 
-# # Confirm the correct version of wandb is being used
-# import wandb
-# print("Using wandb from:", wandb.__file__)
+# Add the local package path to sys.path
+sys.path.insert(0, str(local_wandb_path))
+
+# Confirm the correct version of wandb is being used
+import wandb
+print("Using wandb from:", wandb.__file__)
 ###### END ######
 
 class DocodileMaker:
@@ -136,9 +137,9 @@ def _title_key_string(docodile):
 
 def _type_key_string(docodile):
     if "data_type" in docodile.getfile_path:
-        return f"object_type: data_type\n"
+        return "object_type: data_type\n"
     else:
-        return f"object_type: api\n"
+        return "object_type: api\n"
 
 def add_frontmatter(docodile):
     """Add frontmatter to the markdown file.
@@ -234,9 +235,9 @@ def main(args):
             # Create markdown file for the API
             create_markdown(docodile, generator)
 
-    # Generate overview markdown
-    with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
-        file.write(generator.overview2md())
+    # Generate overview markdown page
+    # with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
+    #     file.write(generator.overview2md())
 
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()
