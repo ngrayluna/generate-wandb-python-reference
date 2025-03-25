@@ -1,7 +1,6 @@
 #!/bin/bash
 
 TEMP_DIR=wandb_sdk_docs
-TEMP_IMPORT_EXPORT_DIR=wandb_import_export_docs
 DESTINATION_DIR=python-library
 HUGO_DIR=/Users/noahluna/Desktop/RandomProjects/docs/content/ref/
 
