@@ -3,6 +3,14 @@ import os
 import argparse
 
 def create_landing_page(root_directory):
+    """Create an _index.md file for each directory in the root directory.
+    
+    Checks if the directory contains an _index.md file. If not,
+    creates one based on the directory name.
+
+    Args:
+        root_directory (str): The root directory to search for _index.md files.
+    """
 
     # Check if the directory exists
     for dirpath, dirnames, filenames in os.walk(root_directory):
@@ -15,6 +23,9 @@ def create_landing_page(root_directory):
                 continue
             elif "actions" in dirpath:
                 create_actions_index_file(dirpath)
+                continue
+            elif "client_types" in dirpath:
+                create_client_index_file(dirpath)
                 continue
             else:
                 create_generic_index_file(dirpath)
@@ -39,6 +50,12 @@ def create_python_index_file(filepath):
     {{< card >}}
         <a href="/ref/python-library/data_types">
         <h2 className="card-title">Data Types</h2>
+        <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
+        </a>
+    {{< /card >}}
+        {{< card >}}
+        <a href="/ref/python-library/client_types">
+        <h2 className="card-title">Client Types</h2>
         <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
         </a>
     {{< /card >}}
@@ -78,8 +95,32 @@ def create_data_type_index_file(filepath):
     print(f"Created {index_file}\n")
     return
 
+
 def create_actions_index_file(filepath):
     """Create an index file for the actions directory."""
+
+    sentence_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
+    ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
+    in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
+    sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+    mollit anim id est laborum."""
+
+    # Create _index.md and add header
+    index_file = os.path.join(filepath, "_index.md")
+
+    # Create title from directory name
+    new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+
+    with open(index_file, 'w') as file:
+        file.write("---\ntitle: " + new_title + "\n---\n")
+        file.write(sentence_1 + "\n\n")
+    print(f"Created {index_file}\n")
+    return
+
+def create_client_index_file(filepath):
+    """Create an index file for the client directory."""
 
     sentence_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
     sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
@@ -119,7 +160,7 @@ def create_generic_index_file(filepath):
 
 
 def main(args):
-    print("\nCreating landing pages for SDK docs...\n")
+    print("\nChecking for _index.md files...\n")
     create_landing_page(args.source_directory)
 
 if __name__ == "__main__":
