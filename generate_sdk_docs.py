@@ -7,6 +7,7 @@ import argparse
 
 # import wandb
 from lazydocs import MarkdownGenerator
+from typing import List
 
 ###### USE LOCAL VERSION OF WANDB for debugging ######
 import sys
@@ -48,6 +49,8 @@ class DocodileMaker:
             self._object_type = "class"
         elif attr_type == "<class 'function'>":
             self._object_type = "function"
+        elif attr_type == "<class 'module'>":
+            self._object_type = "module"
         else:
             self._object_type = "other"
 
@@ -75,7 +78,6 @@ class DocodileMaker:
     @property
     def getfile_path(self):
         self._ensure_object_attribute()
-        print("File path:", self._file_path)
         # if self._file_path is None:
         #     raise ValueError("File path is not available for the specified object.")
         return self._file_path
@@ -136,8 +138,10 @@ def _title_key_string(docodile):
     return f"title: {base_name}\n"
 
 def _type_key_string(docodile):
-    if "data_type" in docodile.getfile_path:
+    if "sdk" and "data_type" in docodile.getfile_path:
         return "object_type: data_type\n"
+    elif "apis" and "public" in docodile.getfile_path:
+        return "object_type: client_type\n"
     else:
         return "object_type: api\n"
 
@@ -195,6 +199,9 @@ def create_markdown(docodile, generator):
         elif docodile.object_type == "function":
             print("Creating function markdown", "\n\n")
             file.write(generator.func2md(docodile.object_attribute_value))
+        elif docodile.object_type == "module":
+            print("Creating module markdown", "\n\n")
+            file.write(generator.module2md(docodile.object_attribute_value))
         else:
             print("No doc generator for this object type")
 
@@ -208,11 +215,47 @@ def check_temp_dir(temp_output_dir):
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
 
+######## TEMP
+
+def get_import_export_apis(file_path: str) -> List[str]:
+    """Extracts API names from a text file.
+    
+    Args:
+        file_path (str): Path to the text file.
+        
+    Returns:
+        List[str]: A list of extracted API names.
+    """
+    api_names = []
+    pattern = re.compile(r"Writing wandb\.apis\.public\.(\w+)\.md")
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        for line in file:
+            match = pattern.search(line)
+            if match:
+                api_names.append(match.group(1))
+
+    return api_names
+
+def organize_api_data(api_action_list: list, import_export_api:list) -> dict:
+    """Gathers API lists from different sources and organizes them in a dictionary."""
+    # Filter api_action_list to only include existing attributes
+    valid_list_1 = [api for api in api_action_list if hasattr(wandb, api)]
+    
+    # Filter import_export_api to only include existing attributes
+    valid_list_2 = [api for api in import_export_api if hasattr(wandb.apis.public, api)]
+    
+    api_data = {
+        wandb: valid_list_1,  # APIs from wandb module
+        wandb.apis.public: valid_list_2  # APIs from wandb.apis.public
+    }
+    return api_data
+
+######## TEMP END
 
 def main(args):
-    module = wandb
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
-    valid_object_types = ["class", "function"]
+    valid_object_types = ["class", "function", "module"]
 
     # Check if temporary directory exists. We use this directory to store generated markdown files.
     # A second script will process these files to clean them up.
@@ -223,17 +266,21 @@ def main(args):
 
     # Get list of public APIs. Exclude APIs marked with # doc:exclude.
     api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
+    
+    ### TO DO: Make this logic similar to above (point to file instead of generating docs and not using them)
+    import_export_api_list = get_import_export_apis(args.temp_output_directory + "/" + args.import_export_api_filename)
+    
+    api_dict = organize_api_data(api_list, import_export_api_list)
 
     # Generate markdown files for each API
-    for api_list_item in api_list:
+    for module, api_list in api_dict.items():
+        for api_list_item in api_list:
+            docodile = DocodileMaker(module, api_list_item, args.temp_output_directory)
 
-        # Create Docodile object
-        docodile = DocodileMaker(module, api_list_item, args.temp_output_directory)
-
-        # Check if object type defined in source code is valid
-        if docodile.object_type in valid_object_types:
-            # Create markdown file for the API
-            create_markdown(docodile, generator)
+            # Check if object type defined in source code is valid
+            if docodile.object_type in valid_object_types:
+                # Create markdown file for the API
+                create_markdown(docodile, generator)
 
     # Generate overview markdown page
     # with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
@@ -242,5 +289,6 @@ def main(args):
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--temp_output_directory", default="wandb_sdk_docs", help="directory where the markdown files to process exist")
+    parser.add_argument("--import_export_api_filename", default="import_export_api_list.txt", help="file containing import/export API names")
     args = parser.parse_args()
     main(args)

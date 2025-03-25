@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TEMP_DIR=wandb_sdk_docs
+TEMP_IMPORT_EXPORT_DIR=wandb_import_export_docs
 DESTINATION_DIR=python-library
 HUGO_DIR=/Users/noahluna/Desktop/RandomProjects/docs/content/ref/
 
@@ -12,6 +13,9 @@ rm -rf $HUGO_DIR/$DESTINATION_DIR
 
 # Generate SDK docs using lazydocs
 python generate_sdk_docs.py --temp_output_directory=$TEMP_DIR
+
+# Generate Import & Export API docs using lazydocs and save generated apis to txt file
+lazydocs --output-path=./$TEMP_IMPORT_EXPORT_DIR wandb.apis.public >> ./$TEMP_DIR/import_export_api_list.txt
 
 # Process output doc created by lazydocs so it works with Docusaurus
 python process_sdk_markdown.py --output_directory=$TEMP_DIR

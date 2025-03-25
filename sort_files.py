@@ -15,8 +15,10 @@ def main(args):
     # Ensure root and subdir exist
     api_dir = os.path.join(root_directory, "actions")
     data_type_dir = os.path.join(root_directory, "data_types")
+    client_type_dir = os.path.join(root_directory, "client_types")
     os.makedirs(api_dir, exist_ok=True)
     os.makedirs(data_type_dir, exist_ok=True)
+    os.makedirs(client_type_dir, exist_ok=True)
 
     # Pattern to match YAML frontmatter
     frontmatter_pattern = re.compile(r"^---\n(.*?)\n---", re.DOTALL)    
@@ -48,6 +50,8 @@ def main(args):
                 target_dir = api_dir
             elif object_type == "data_type":
                 target_dir = data_type_dir
+            elif object_type == "client_type" :
+                target_dir = client_type_dir
             else:
                 print(f"Skipping {filepath}: Unknown object_type '{object_type}'.")
                 continue
@@ -55,7 +59,7 @@ def main(args):
             # Move the file to the target directory
             target_path = os.path.join(target_dir, os.path.basename(filepath))
             shutil.move(filepath, target_path)
-            print(f"Moved {filepath} to {target_path}")
+            # print(f"Moved {filepath} to {target_path}")
     return
 
 if __name__ == "__main__":
