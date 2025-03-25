@@ -25,7 +25,7 @@ def main(args):
 
      # Iterate over markdown files in source directory
     for filepath in glob.glob(os.path.join(os.getcwd(), source_directory, '*.md')):
-        print(f"Reading in {filepath} for processing...")
+        print(f"Reading in {filepath} for sorting...")
 
         # Read markdown content from file
         with open(filepath, 'r') as file:
