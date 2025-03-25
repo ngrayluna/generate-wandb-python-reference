@@ -215,30 +215,14 @@ def check_temp_dir(temp_output_dir):
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
 
-######## TEMP
-
-def get_import_export_apis(file_path: str) -> List[str]:
-    """Extracts API names from a text file.
+######## TEMP START
+def organize_api_data(api_action_list: list, import_export_api:list) -> dict:
+    """Gathers API lists from different sources and organizes them in a dictionary.
     
     Args:
-        file_path (str): Path to the text file.
-        
-    Returns:
-        List[str]: A list of extracted API names.
+        api_action_list (list): List of APIs from wandb module.
+        import_export_api (list): List of APIs from wandb.apis.public module.
     """
-    api_names = []
-    pattern = re.compile(r"Writing wandb\.apis\.public\.(\w+)\.md")
-
-    with open(file_path, "r", encoding="utf-8") as file:
-        for line in file:
-            match = pattern.search(line)
-            if match:
-                api_names.append(match.group(1))
-
-    return api_names
-
-def organize_api_data(api_action_list: list, import_export_api:list) -> dict:
-    """Gathers API lists from different sources and organizes them in a dictionary."""
     # Filter api_action_list to only include existing attributes
     valid_list_1 = [api for api in api_action_list if hasattr(wandb, api)]
     
@@ -251,11 +235,33 @@ def organize_api_data(api_action_list: list, import_export_api:list) -> dict:
     }
     return api_data
 
+def get_public_apis_from_init(file_path: str) -> List[str]:
+    """Extracts module names from an __init__.py file in the wandb.apis.public namespace.
+    
+    Args:
+        file_path (str): Path to the __init__.py file.
+
+    Returns:
+        List[str]: List of module names with ".md" suffix.
+    """
+    modules = set()
+    pattern = re.compile(r"^from wandb\.apis\.public\.(\w+) import")
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        for line in file:
+            match = pattern.match(line)
+            if match:
+                modules.add(match.group(1))
+
+    # Convert to sorted list and append ".md" to each module name
+    return sorted(modules)
+
 ######## TEMP END
+
 
 def main(args):
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
-    valid_object_types = ["class", "function", "module"]
+    valid_object_types = [ "module", "class", "function"]
 
     # Check if temporary directory exists. We use this directory to store generated markdown files.
     # A second script will process these files to clean them up.
@@ -266,10 +272,9 @@ def main(args):
 
     # Get list of public APIs. Exclude APIs marked with # doc:exclude.
     api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
+    import_export_api_list = get_public_apis_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py")
     
-    ### TO DO: Make this logic similar to above (point to file instead of generating docs and not using them)
-    import_export_api_list = get_import_export_apis(args.temp_output_directory + "/" + args.import_export_api_filename)
-    
+    # Combine API lists from different sources and use module as key
     api_dict = organize_api_data(api_list, import_export_api_list)
 
     # Generate markdown files for each API
@@ -289,6 +294,5 @@ def main(args):
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--temp_output_directory", default="wandb_sdk_docs", help="directory where the markdown files to process exist")
-    parser.add_argument("--import_export_api_filename", default="import_export_api_list.txt", help="file containing import/export API names")
     args = parser.parse_args()
     main(args)

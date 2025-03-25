@@ -160,7 +160,7 @@ def create_generic_index_file(filepath):
 
 
 def main(args):
-    print("\n Checking for _index.md files...\n")
+    print("\nChecking for _index.md files...\n")
     create_landing_page(args.source_directory)
 
 if __name__ == "__main__":
