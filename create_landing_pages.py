@@ -3,6 +3,14 @@ import os
 import argparse
 
 def create_landing_page(root_directory):
+    """Create an _index.md file for each directory in the root directory.
+    
+    Checks if the directory contains an _index.md file. If not,
+    creates one based on the directory name.
+
+    Args:
+        root_directory (str): The root directory to search for _index.md files.
+    """
 
     # Check if the directory exists
     for dirpath, dirnames, filenames in os.walk(root_directory):
