@@ -26,7 +26,7 @@ def create_landing_page(root_directory):
             if dirpath == "python-library":
                 create_python_index_file(dirpath)
                 continue
-            elif "data_types" in dirpath:
+            elif "data-types" in dirpath:
                 create_data_type_index_file(dirpath)
                 continue
             elif "actions" in dirpath:
@@ -55,20 +55,20 @@ def create_python_index_file(filepath):
     cardpane = """{{< cardpane >}}
     {{< card >}}
         <a href="/ref/python-library/actions">
-        <h2 className="card-title">Actions</h2>
-        <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <h2 className="card-title">SDK</h2>
+        <p className="card-content">Use during training to log experiments, track metrics, and save model artifacts.</p>
         </a>
     {{< /card >}}
     {{< card >}}
-        <a href="/ref/python-library/data_types">
+        <a href="/ref/python-library/data-types">
         <h2 className="card-title">Data Types</h2>
         <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
         </a>
     {{< /card >}}
         {{< card >}}
         <a href="/ref/python-library/public-api">
-        <h2 className="card-title">Client Types</h2>
-        <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
+        <h2 className="card-title">Analytics and Query API</h2>
+        <p className="card-content">Query and analyze data logged to W&B.</p>
         </a>
     {{< /card >}}
     {{< /cardpane >}}"""
@@ -83,7 +83,7 @@ def create_python_index_file(filepath):
 
 
 def create_data_type_index_file(filepath):
-    """Create an index file for the data_types directory."""
+    """Create an index file for the data-types directory."""
 
     sentence_1 = """This module defines Data Types for logging interactive visualizations to W&B. 
     Data types include common media types, like images, audio, and videos, flexible containers 

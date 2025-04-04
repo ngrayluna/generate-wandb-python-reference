@@ -141,7 +141,7 @@ def _type_key_string(docodile):
     if "sdk" and "data_type" in docodile.getfile_path:
         return "object_type: data_type\n"
     elif "apis" and "public" in docodile.getfile_path:
-        return "object_type: client_type\n"
+        return "object_type: public_apis_namespace\n"
     else:
         return "object_type: api\n"
 
