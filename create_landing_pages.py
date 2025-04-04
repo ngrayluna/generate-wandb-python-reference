@@ -2,6 +2,14 @@
 import os
 import argparse
 
+# Temporary to preserve existing paths
+titles = {
+    "python-library": "Python",
+    "public-api": "Analytics and Query API",
+    "data-types": "Data Types",
+    "actions": "SDK",
+}
+
 def create_landing_page(root_directory):
     """Create an _index.md file for each directory in the root directory.
     
@@ -24,8 +32,8 @@ def create_landing_page(root_directory):
             elif "actions" in dirpath:
                 create_actions_index_file(dirpath)
                 continue
-            elif "client_types" in dirpath:
-                create_client_index_file(dirpath)
+            elif "public-api" in dirpath:
+                create_public_api_index_files(dirpath)
                 continue
             else:
                 create_generic_index_file(dirpath)
@@ -38,7 +46,11 @@ def create_python_index_file(filepath):
     index_file = os.path.join(filepath, "_index.md")
 
     # Create title from directory name
-    new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+    # new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+    if os.path.basename(filepath) in titles:
+        new_title = titles[os.path.basename(filepath)]
+    else:
+        new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
 
     cardpane = """{{< cardpane >}}
     {{< card >}}
@@ -54,7 +66,7 @@ def create_python_index_file(filepath):
         </a>
     {{< /card >}}
         {{< card >}}
-        <a href="/ref/python-library/client_types">
+        <a href="/ref/python-library/public-api">
         <h2 className="card-title">Client Types</h2>
         <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
         </a>
@@ -111,7 +123,11 @@ def create_actions_index_file(filepath):
     index_file = os.path.join(filepath, "_index.md")
 
     # Create title from directory name
-    new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+    #new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+    if os.path.basename(filepath) in titles:
+        new_title = titles[os.path.basename(filepath)]
+    else:
+        new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
 
     with open(index_file, 'w') as file:
         file.write("---\ntitle: " + new_title + "\n---\n")
@@ -119,7 +135,7 @@ def create_actions_index_file(filepath):
     print(f"Created {index_file}\n")
     return
 
-def create_client_index_file(filepath):
+def create_public_api_index_files(filepath):
     """Create an index file for the client directory."""
 
     sentence_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
@@ -134,7 +150,13 @@ def create_client_index_file(filepath):
     index_file = os.path.join(filepath, "_index.md")
 
     # Create title from directory name
-    new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+    #new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+
+    # Create title from titles dictionary if exists, otherwise use directory name
+    if os.path.basename(filepath) in titles:
+        new_title = titles[os.path.basename(filepath)]
+    else:
+        new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
 
     with open(index_file, 'w') as file:
         file.write("---\ntitle: " + new_title + "\n---\n")

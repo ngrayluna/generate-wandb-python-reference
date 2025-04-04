@@ -15,7 +15,7 @@ def main(args):
     # Ensure root and subdir exist
     api_dir = os.path.join(root_directory, "actions")
     data_type_dir = os.path.join(root_directory, "data_types")
-    client_type_dir = os.path.join(root_directory, "client_types")
+    client_type_dir = os.path.join(root_directory, "public-api")
     os.makedirs(api_dir, exist_ok=True)
     os.makedirs(data_type_dir, exist_ok=True)
     os.makedirs(client_type_dir, exist_ok=True)
