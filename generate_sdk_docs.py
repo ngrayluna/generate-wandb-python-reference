@@ -219,7 +219,7 @@ def get_public_apis_from_init(file_path: str) -> List[str]:
     # Convert to sorted list and append ".md" to each module name
     return sorted(modules)
 
-###### TESTING ####
+
 def get_api_list_from_pyi(file_path):
     """Get list of public APIs from a .pyi file. Exclude APIs marked with # doc:exclude.
 
@@ -310,9 +310,6 @@ def extract_all_from_init(file_path: str) -> List[str]:
     return []  # If __all__ not found
 
 
-######## TEMP END
-
-
 def main(args):
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
     valid_object_types = [ "module", "class", "function"]
@@ -327,12 +324,7 @@ def main(args):
     # Get list of public APIs. Exclude APIs marked with # doc:exclude.
     api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
     import_export_api_list = get_public_apis_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py")
-    
-    ### TESTING NEW EXTRACT FUNCTION FOR LAUNCH AND SDK
     launch_api_list = extract_all_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/launch/__init__.py")
-    #api_list = extract_all_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
-
-
 
     # Combine API lists from different sources and use module as key
     api_dict = organize_api_data(api_list, import_export_api_list, launch_api_list)
