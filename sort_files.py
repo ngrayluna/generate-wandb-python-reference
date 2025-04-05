@@ -16,7 +16,8 @@ def main(args):
         "api": "actions",
         "data_type": "data-types",
         "public_apis_namespace": "public-api",
-        "launch_apis_namespace": os.path.join("actions", "launch-library"),  # Make it a subdirectory under actions
+        "launch_apis_namespace": "launch-library",  
+        #"launch_apis_namespace": os.path.join("actions", "launch-library"),  # Make it a subdirectory under actions
     }
 
     # Ensure all destination subdirectories exist
