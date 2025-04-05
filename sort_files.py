@@ -11,12 +11,12 @@ def main(args):
     source_directory = args.source_directory
     root_directory = args.destination_directory
 
-    # Define object_type to subfolder mapping
+    # # Define object_type to subfolder mapping
     type_to_subfolder = {
         "api": "actions",
         "data_type": "data-types",
         "public_apis_namespace": "public-api",
-        "launch_apis_namespace": "launch-library",  # for future use
+        "launch_apis_namespace": os.path.join("actions", "launch-library"),  # Make it a subdirectory under actions
     }
 
     # Ensure all destination subdirectories exist

@@ -325,12 +325,12 @@ def main(args):
     generator = MarkdownGenerator(src_base_url=src_base_url)
 
     # Get list of public APIs. Exclude APIs marked with # doc:exclude.
-    #api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi") ### TEMP COMMENT
+    api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
     import_export_api_list = get_public_apis_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py")
     
     ### TESTING NEW EXTRACT FUNCTION FOR LAUNCH AND SDK
     launch_api_list = extract_all_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/launch/__init__.py")
-    api_list = extract_all_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
+    #api_list = extract_all_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
 
 
 
