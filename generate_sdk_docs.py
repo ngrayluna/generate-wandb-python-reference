@@ -4,7 +4,7 @@ import os
 import re
 import inspect
 import argparse
-import ast
+import importlib  # make sure this is at the top
 
 # import wandb
 from lazydocs import MarkdownGenerator
@@ -174,30 +174,6 @@ def check_temp_dir(temp_output_dir):
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
 
-
-def organize_api_data(api_action_list: list, import_export_api:list, launch_api_list:list) -> dict:
-    """Gathers API lists from different sources and organizes them in a dictionary.
-    
-    Args:
-        api_action_list (list): List of APIs from wandb module.
-        import_export_api (list): List of APIs from wandb.apis.public module.
-    """
-    # Filter api_action_list to only include existing attributes
-    valid_list_1 = [api for api in api_action_list if hasattr(wandb, api)]
-    
-    # Filter import_export_api to only include existing attributes
-    valid_list_2 = [api for api in import_export_api if hasattr(wandb.apis.public, api)]
-
-    # If launch_api_list is provided, add it to the dictionary
-    valid_list_3 = [api for api in launch_api_list if hasattr(wandb.sdk.launch, api)]
-    
-    api_data = {
-        wandb: valid_list_1,  # APIs from wandb module
-        wandb.apis.public: valid_list_2,  # APIs from wandb.apis.public
-        wandb.sdk.launch: valid_list_3  # APIs from wandb.sdk.launch
-    }
-    return api_data
-
 def get_public_apis_from_init(file_path: str) -> List[str]:
     """Extracts module names from an __init__.py file in the wandb.apis.public namespace.
     
@@ -219,96 +195,48 @@ def get_public_apis_from_init(file_path: str) -> List[str]:
     # Convert to sorted list and append ".md" to each module name
     return sorted(modules)
 
-
-def get_api_list_from_pyi(file_path):
-    """Get list of public APIs from a .pyi file. Exclude APIs marked with # doc:exclude.
+def get_api_list_from_init(file_path):
+    """Get list of APIs from a Python __init__.py or .pyi file.
+    Excludes APIs marked with # doc:exclude.
 
     Args:
-        file_path (str): Path to the .pyi file.
+        file_path (str): Path to the file.
+
+    Returns:
+        list[str]: List of public API names.
     """
-    # Debug variables
-    raw_content = ""
-    matched_all_content = ""
-
-    # Adjusted regex to match `__all__` with more flexible spacing and comments
-    all_pattern = re.compile(r'__all__\s*=\s*\((.*?)\)', re.DOTALL)
-    # Regex to extract individual items
-    item_pattern = re.compile(r'"(.*?)"')
-    # Regex to detect # doc:exclude
-    exclude_pattern = re.compile(r'#\s*doc:exclude')
-
     try:
         with open(file_path, "r") as f:
-            raw_content = f.read()  # Read file content
+            content = f.read()
     except Exception as e:
         print(f"Error reading file: {e}")
         return []
 
-    # Match `__all__` section
-    match = all_pattern.search(raw_content)
-    if match:
-        matched_all_content = match.group(1)
-        print("Matched __all__ content:\n", matched_all_content)
-    else:
+    # Match __all__ assignment with brackets or parentheses
+    all_match = re.search(
+        r'__all__\s*=\s*[\[\(](.*?)[\]\)]',
+        content,
+        re.DOTALL,
+    )
+
+    if not all_match:
         print("__all__ definition not found!")
         return []
 
-    # Process the matched content line by line
-    filtered_items = []
-    for line in matched_all_content.splitlines():
-        if exclude_pattern.search(line):
-            continue  # Skip lines with # doc:exclude
-        item_match = item_pattern.search(line)
-        if item_match:
-            filtered_items.append(item_match.group(1))
+    all_block = all_match.group(1)
 
-    return filtered_items
+    # Extract all quoted strings, skipping those on lines with `# doc:exclude`
+    lines = all_block.splitlines()
+    result = []
 
-def get_launch_apis_from_init(file_path: str) -> List[str]:
-    """Extracts module names from an __init__.py file in the wandb.launch namespace.
-    
-    Args:
-        file_path (str): Path to the __init__.py file.
+    for line in lines:
+        if '# doc:exclude' in line:
+            continue
+        # Look for single or double quoted strings
+        matches = re.findall(r'["\'](.*?)["\']', line)
+        result.extend(matches)
 
-    Returns:
-        List[str]: List of module names with ".md" suffix.
-    """
-    modules = set()
-    pattern = re.compile(r"^from wandb\.launch\.(\w+) import")
-
-    with open(file_path, "r", encoding="utf-8") as file:
-        for line in file:
-            match = pattern.match(line)
-            if match:
-                modules.add(match.group(1))
-
-    # Convert to sorted list and append ".md" to each module name
-    return sorted(modules)
-
-def extract_all_from_init(file_path: str) -> List[str]:
-    """Extracts the __all__ symbols from an __init__.py file.
-
-    Args:
-        file_path (str): Path to the __init__.py file.
-
-    Returns:
-        List[str]: List of names exposed in __all__.
-    """
-    with open(file_path, "r", encoding="utf-8") as f:
-        source = f.read()
-
-    tree = ast.parse(source, filename=file_path)
-
-    for node in tree.body:
-        # Look for: __all__ = [...]
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Name) and target.id == "__all__":
-                    if isinstance(node.value, (ast.List, ast.Tuple)):
-                        return [elt.s for elt in node.value.elts if isinstance(elt, ast.Str)]
-
-    return []  # If __all__ not found
-
+    return result
 
 def main(args):
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
@@ -321,18 +249,36 @@ def main(args):
     # Create MarkdownGenerator object. We use the same generator object for all APIs.
     generator = MarkdownGenerator(src_base_url=src_base_url)
 
-    # Get list of public APIs. Exclude APIs marked with # doc:exclude.
-    api_list = get_api_list_from_pyi("/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.pyi")
+    # To do: Remove this method of extracting public APIs from the __init__.py file.
     import_export_api_list = get_public_apis_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py")
-    launch_api_list = extract_all_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/launch/__init__.py")
 
-    # Combine API lists from different sources and use module as key
-    api_dict = organize_api_data(api_list, import_export_api_list, launch_api_list)
+    namespaces = {
+        "public": {
+            "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py",
+            "module": "wandb.apis.public",
+            "apis_found": import_export_api_list
+        } ,       
+        "sdk": {
+            "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.template.pyi",
+            "module": "wandb"
+        },
+        "launch": {
+            "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/launch/__init__.py",
+            "module": "wandb.sdk.launch"
+        },
+    }
 
-    # Generate markdown files for each API
-    for module, api_list in api_dict.items():
-        for api_list_item in api_list:
-            docodile = DocodileMaker(module, api_list_item, args.temp_output_directory)
+    # Get list of APIs from the __init__ files for each namespace
+    for k in list(namespaces.keys()):
+        print(k)
+        if "apis_found" not in namespaces[k]:
+            namespaces[k]["apis_found"] = get_api_list_from_init(namespaces[k]["file_path"])        
+
+        for api in namespaces[k]["apis_found"]:
+            
+            print(k, api)
+            module_obj = importlib.import_module(namespaces[k]["module"])
+            docodile = DocodileMaker(module_obj, api, args.temp_output_directory)
 
             # Check if object type defined in source code is valid
             if docodile.object_type in valid_object_types:
