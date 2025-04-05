@@ -37,7 +37,7 @@ class DocodileMaker:
 
     def _ensure_object_attribute(self):
         """Ensure `_object_attribute` is initialized."""
-        if self._object_attribute is None:
+        if (self._object_attribute is None) and (hasattr(self.module, self.api_item)):
             self._object_attribute = getattr(self.module, self.api_item)
             self._update_object_type()
             self._update_file_path()
