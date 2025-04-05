@@ -95,8 +95,8 @@ def _title_key_string(docodile):
 
 def _type_key_string(docodile):
     """Determine the type of the object and return the appropriate frontmatter string."""
-    if "sdk" and "data_type" in docodile.getfile_path:
-        return "object_type: data_type\n"
+    if "sdk" and "data_type" in docodile.getfile_path: # Careful with data-type and data_type
+        return "object_type: data-type\n"
     elif "apis" and "public" in docodile.getfile_path:
         return "object_type: public_apis_namespace\n"
     elif "launch" in docodile.getfile_path:

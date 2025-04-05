@@ -14,7 +14,7 @@ def main(args):
     # # Define object_type to subfolder mapping
     type_to_subfolder = {
         "api": "actions",
-        "data_type": "data-types",
+        "data-type": "data-type",
         "public_apis_namespace": "public-api",
         "launch_apis_namespace": "launch-library",  
         #"launch_apis_namespace": os.path.join("actions", "launch-library"),  # Make it a subdirectory under actions

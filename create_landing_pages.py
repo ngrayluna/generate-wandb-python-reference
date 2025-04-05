@@ -7,7 +7,7 @@ page_content = {
         "title": "Analytics and Query API",
         "description": "Query and analyze data logged to W&B.",
     },
-    "data-types": {
+    "data-type": {
         "title": "Data Types",
         "description": "Defines Data Types for logging interactive visualizations to W&B.",
     },
