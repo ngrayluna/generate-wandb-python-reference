@@ -35,6 +35,9 @@ def create_landing_page(root_directory):
             elif "public-api" in dirpath:
                 create_public_api_index_files(dirpath)
                 continue
+            elif "launch-library" in dirpath:
+                # If there's a launch-library directory, we can create an index file for it
+                create_generic_index_file(dirpath)
             else:
                 create_generic_index_file(dirpath)
     return
