@@ -2,58 +2,65 @@
 import os
 import argparse
 
-# Temporary to preserve existing paths
-titles = {
-    "python-library": "Python",
-    "public-api": "Analytics and Query API",
-    "data-types": "Data Types",
-    "actions": "SDK",
+page_content = {
+    "public-api": {
+        "title": "Analytics and Query API",
+        "description": "Query and analyze data logged to W&B.",
+    },
+    "data-types": {
+        "title": "Data Types",
+        "description": "Defines Data Types for logging interactive visualizations to W&B.",
+    },
+    "actions": {
+        "title": "SDK",
+        "description": "Use during training to log experiments, track metrics, and save model artifacts.",
+    },
+    "launch-library": {
+        "title": "Launch Library",
+        "description": "A collection of launch APIs for W&B.",
+    }
 }
 
-def create_landing_page(root_directory):
-    """Create an _index.md file for each directory in the root directory.
+
+def create_markdown_index_page(root_directory):
+    """Create an _index.md file for each directory in the root directory for testing purposes.
     
     Checks if the directory contains an _index.md file. If not,
-    creates one based on the directory name.
+    creates one based on the directory name and predefined page content.
 
     Args:
         root_directory (str): The root directory to search for _index.md files.
     """
-
-    # Check if the directory exists
     for dirpath, dirnames, filenames in os.walk(root_directory):
         if '_index.md' not in filenames:
-            if dirpath == "python-library":
+            if dirpath ==  "python-library":
                 create_python_index_file(dirpath)
                 continue
-            elif "data-types" in dirpath:
-                create_data_type_index_file(dirpath)
-                continue
-            elif "actions" in dirpath:
-                create_actions_index_file(dirpath)
-                continue
-            elif "public-api" in dirpath:
-                create_public_api_index_files(dirpath)
-                continue
-            elif "launch-library" in dirpath:
-                # If there's a launch-library directory, we can create an index file for it
-                create_generic_index_file(dirpath)
+            
+            dir_name = os.path.basename(dirpath)
+            if dir_name in page_content:
+                new_title = page_content[dir_name]["title"]
+                description = page_content[dir_name]["description"]
             else:
-                create_generic_index_file(dirpath)
+                new_title = dir_name.replace("-", " ").replace("_", " ").title()
+                description = "No description available."
+
+            index_file = os.path.join(dirpath, "_index.md")
+            with open(index_file, 'w') as file:
+                file.write("---\ntitle: " + new_title + "\n---\n")
+                file.write(description + "\n")
+            print(f"Created {index_file}\n")
     return
 
+
 def create_python_index_file(filepath):
-    """Create an index file for the python-library directory."""
+    """Create an _index.md file for the top most python-library folder."""
 
     # Create _index.md and add header
     index_file = os.path.join(filepath, "_index.md")
 
-    # Create title from directory name
-    # new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
-    if os.path.basename(filepath) in titles:
-        new_title = titles[os.path.basename(filepath)]
-    else:
-        new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
+    # Title to print on the top most directory
+    title = "Python"
 
     cardpane = """{{< cardpane >}}
     {{< card >}}
@@ -68,125 +75,33 @@ def create_python_index_file(filepath):
         <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
         </a>
     {{< /card >}}
-        {{< card >}}
+    {{< /cardpane >}}
+    {{< cardpane >}}
+    {{< card >}}
         <a href="/ref/python-library/public-api">
         <h2 className="card-title">Analytics and Query API</h2>
         <p className="card-content">Query and analyze data logged to W&B.</p>
         </a>
     {{< /card >}}
+    {{< card >}}
+        <a href="/ref/python-library/launch-library">
+        <h2 className="card-title">Launch Library</h2>
+        <p className="card-content">A collection of launch APIs for W&B.</p>
+        </a>
+    {{< /card >}}
     {{< /cardpane >}}"""
 
     with open(index_file, 'w') as file:
-        file.write("---\ntitle: " + new_title + "\n---\n")
+        file.write("---\ntitle: " + title + "\n---\n")
         file.write(cardpane)
-
-        
+     
     print(f"Created {index_file}\n")
     return
-
-
-def create_data_type_index_file(filepath):
-    """Create an index file for the data-types directory."""
-
-    sentence_1 = """This module defines Data Types for logging interactive visualizations to W&B. 
-    Data types include common media types, like images, audio, and videos, flexible containers 
-    for information, like tables and HTML, and more. All of these special data types are subclasses
-    of WBValue. All the data types serialize to JSON, since that is what wandb uses to save
-    the objects locally and upload them to the W&B server."""
-
-    sentence_2 = """For more on logging media, see our guide. For more on logging
-    structured data for interactive dataset and model analysis, see to W&B Tables."""
-
-    # Create _index.md and add header
-    index_file = os.path.join(filepath, "_index.md")
-
-    # Create title from directory name
-    new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
-
-    with open(index_file, 'w') as file:
-        file.write("---\ntitle: " + new_title + "\n---\n")
-        file.write(sentence_1 + "\n\n")
-        file.write(sentence_2 + "\n")
-    print(f"Created {index_file}\n")
-    return
-
-
-def create_actions_index_file(filepath):
-    """Create an index file for the actions directory."""
-
-    sentence_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
-    ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-    in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
-    sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
-    mollit anim id est laborum."""
-
-    # Create _index.md and add header
-    index_file = os.path.join(filepath, "_index.md")
-
-    # Create title from directory name
-    #new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
-    if os.path.basename(filepath) in titles:
-        new_title = titles[os.path.basename(filepath)]
-    else:
-        new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
-
-    with open(index_file, 'w') as file:
-        file.write("---\ntitle: " + new_title + "\n---\n")
-        file.write(sentence_1 + "\n\n")
-    print(f"Created {index_file}\n")
-    return
-
-def create_public_api_index_files(filepath):
-    """Create an index file for the client directory."""
-
-    sentence_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
-    ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-    in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
-    sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
-    mollit anim id est laborum."""
-
-    # Create _index.md and add header
-    index_file = os.path.join(filepath, "_index.md")
-
-    # Create title from directory name
-    #new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
-
-    # Create title from titles dictionary if exists, otherwise use directory name
-    if os.path.basename(filepath) in titles:
-        new_title = titles[os.path.basename(filepath)]
-    else:
-        new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
-
-    with open(index_file, 'w') as file:
-        file.write("---\ntitle: " + new_title + "\n---\n")
-        file.write(sentence_1 + "\n\n")
-    print(f"Created {index_file}\n")
-    return
-
-
-def create_generic_index_file(filepath):
-    """Create an index file for a generic directory."""
-
-    # Create _index.md and add header
-    index_file = os.path.join(filepath, "_index.md")
-
-    # Create title from directory name
-    new_title = os.path.basename(filepath).replace("-", " ").replace("_", " ").title()
-
-    with open(index_file, 'w') as file:
-        file.write("---\ntitle: " + new_title + "\n---\n")
-    print(f"Created {index_file}\n")
-    return
-
 
 
 def main(args):
-    print("\nChecking for _index.md files...\n")
-    create_landing_page(args.source_directory)
+    print("\nChecking for _index.md files...")
+    create_markdown_index_page(args.source_directory)  # For testing purposes
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
