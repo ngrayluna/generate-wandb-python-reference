@@ -10,6 +10,9 @@ import importlib  # make sure this is at the top
 from lazydocs import MarkdownGenerator
 from typing import List
 
+from configuration import SOURCE 
+
+
 ###### USE LOCAL VERSION OF WANDB for debugging ######
 import sys
 from pathlib import Path
@@ -26,7 +29,7 @@ print("Using wandb from:", wandb.__file__)
 ###### END ######
 
 class DocodileMaker:
-    def __init__(self, module, api, output_dir):
+    def __init__(self, module, api, output_dir, SOURCE):
         self.module = module
         self.api_item = api
         self.output_dir = output_dir
@@ -94,15 +97,24 @@ def _title_key_string(docodile):
     return f"title: {base_name}\n"
 
 def _type_key_string(docodile):
-    """Determine the type of the object and return the appropriate frontmatter string."""
+    """Checks the filepath and checks for substrings (e.g. "sdk", "data_type").
+    
+    Based on substring, determine the type of the object. Return the
+    appropriate frontmatter string with the determined type.
+    """
     if "sdk" and "data_type" in docodile.getfile_path: # Careful with data-type and data_type
-        return "object_type: data-type\n"
+        return SOURCE["DATATYPE"]["hugo_specs"]["frontmatter"] + "\n"
     elif "apis" and "public" in docodile.getfile_path:
-        return "object_type: public_apis_namespace\n"
+        return SOURCE["PUBLIC_API"]["hugo_specs"]["frontmatter"] + "\n"
     elif "launch" in docodile.getfile_path:
-        return "object_type: launch_apis_namespace\n"
+        return SOURCE["LAUNCH_API"]["hugo_specs"]["frontmatter"] + "\n"
     else:
-        return "object_type: api\n"
+        return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
+
+def get_type_key_string(self):
+    # Make a method that returns the definition specified
+    # in _type_key_string
+    return    
 
 def add_frontmatter(docodile):
     """Add frontmatter to the markdown file.
@@ -247,47 +259,36 @@ def main(args):
     check_temp_dir(args.temp_output_directory)
 
     # Create MarkdownGenerator object. We use the same generator object for all APIs.
+    # Using the same generator enables us to create an overview markdown page if needed.
     generator = MarkdownGenerator(src_base_url=src_base_url)
 
+    # Make a copy of the SOURCE dictionary to avoid modifying the original
+    SOURCE_DICT_COPY = SOURCE.copy()  
+
+    ## Temporary ##
     # To do: Remove this method of extracting public APIs from the __init__.py file.
     import_export_api_list = get_public_apis_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py")
-
-    namespaces = {
-        "public": {
-            "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py",
-            "module": "wandb.apis.public",
-            "apis_found": import_export_api_list
-        } ,       
-        "sdk": {
-            "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.template.pyi",
-            "module": "wandb"
-        },
-        "launch": {
-            "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/launch/__init__.py",
-            "module": "wandb.sdk.launch"
-        },
-    }
+    SOURCE_DICT_COPY["PUBLIC_API"]["apis_found"] = import_export_api_list
+    ## End Temporary ##
 
     # Get list of APIs from the __init__ files for each namespace
-    for k in list(namespaces.keys()):
-        print(k)
-        if "apis_found" not in namespaces[k]:
-            namespaces[k]["apis_found"] = get_api_list_from_init(namespaces[k]["file_path"])        
+    for k in list(SOURCE_DICT_COPY.keys()):
 
-        for api in namespaces[k]["apis_found"]:
-            
+        # Get APIS for each namespace
+        if "apis_found" not in SOURCE_DICT_COPY[k]:
+            SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])        
+
+        # Get components needed to create markdown files for Hugo
+        for api in SOURCE_DICT_COPY[k]["apis_found"]:            
             print(k, api)
-            module_obj = importlib.import_module(namespaces[k]["module"])
-            docodile = DocodileMaker(module_obj, api, args.temp_output_directory)
+            print(SOURCE_DICT_COPY[k]["module"])
+            module_obj = importlib.import_module(SOURCE_DICT_COPY[k]["module"])
+            docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
 
             # Check if object type defined in source code is valid
             if docodile.object_type in valid_object_types:
                 # Create markdown file for the API
                 create_markdown(docodile, generator)
-
-    # Generate overview markdown page
-    # with open(os.path.join(os.getcwd(), args.temp_output_directory, "README.md"), 'w') as file:
-    #     file.write(generator.overview2md())
 
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()

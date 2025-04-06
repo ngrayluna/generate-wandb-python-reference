@@ -1,110 +1,87 @@
-#!/bin/usr/python
+#!/usr/bin/env python
+
 import os
 import argparse
 
-page_content = {
-    "public-api": {
-        "title": "Analytics and Query API",
-        "description": "Query and analyze data logged to W&B.",
-    },
-    "data-type": {
-        "title": "Data Types",
-        "description": "Defines Data Types for logging interactive visualizations to W&B.",
-    },
-    "actions": {
-        "title": "SDK",
-        "description": "Use during training to log experiments, track metrics, and save model artifacts.",
-    },
-    "launch-library": {
-        "title": "Launch Library",
-        "description": "A collection of launch APIs for W&B.",
-    }
-}
+from configuration import SOURCE
+
+
+def build_page_content_from_source():
+    """Construct page content from the SOURCE dictionary."""
+    content = {}
+    for value in SOURCE.values():
+        folder = value["hugo_specs"]["folder_name"]
+        title = value["hugo_specs"].get("title", folder.replace("-", " ").title())
+        description = value["hugo_specs"].get("description", "No description available.")
+        content[folder] = {"title": title, "description": description}
+    return content
 
 
 def create_markdown_index_page(root_directory):
-    """Create an _index.md file for each directory in the root directory for testing purposes.
+    """Create an _index.md file for each directory in the root directory.
     
-    Checks if the directory contains an _index.md file. If not,
-    creates one based on the directory name and predefined page content.
-
-    Args:
-        root_directory (str): The root directory to search for _index.md files.
+    Skips any directory that already contains an _index.md.
     """
+    page_content = build_page_content_from_source()
+
     for dirpath, dirnames, filenames in os.walk(root_directory):
-        if '_index.md' not in filenames:
-            if dirpath ==  "python-library":
-                create_python_index_file(dirpath)
-                continue
-            
-            dir_name = os.path.basename(dirpath)
-            if dir_name in page_content:
-                new_title = page_content[dir_name]["title"]
-                description = page_content[dir_name]["description"]
-            else:
-                new_title = dir_name.replace("-", " ").replace("_", " ").title()
-                description = "No description available."
+        if '_index.md' in filenames:
+            continue
 
-            index_file = os.path.join(dirpath, "_index.md")
-            with open(index_file, 'w') as file:
-                file.write("---\ntitle: " + new_title + "\n---\n")
-                file.write(description + "\n")
-            print(f"Created {index_file}\n")
-    return
+        # Handle top-level index separately
+        if dirpath == root_directory:
+            create_python_index_file(dirpath, page_content)
+            continue
+
+        dir_name = os.path.basename(dirpath)
+        print(f"Creating _index.md for directory: {dir_name}")
+        title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").title())
+        description = page_content.get(dir_name, {}).get("description", "No description available.")
+
+        index_file = os.path.join(dirpath, "_index.md")
+        with open(index_file, 'w') as file:
+            file.write(f"---\ntitle: {title}\n---\n{description}\n")
+        print(f"Created {index_file}\n")
 
 
-def create_python_index_file(filepath):
-    """Create an _index.md file for the top most python-library folder."""
+def create_python_index_file(filepath, page_content):
+    """Create an _index.md file for the top-level python-library folder."""
 
-    # Create _index.md and add header
     index_file = os.path.join(filepath, "_index.md")
-
-    # Title to print on the top most directory
     title = "Python"
 
-    cardpane = """{{< cardpane >}}
-    {{< card >}}
-        <a href="/ref/python-library/actions">
-        <h2 className="card-title">SDK</h2>
-        <p className="card-content">Use during training to log experiments, track metrics, and save model artifacts.</p>
+    # Generate cards dynamically from page_content
+    card_blocks = []
+    for folder, data in page_content.items():
+        url = f"/ref/python-library/{folder}"
+        card = f"""    {{{{< card >}}}}
+        <a href="{url}">
+        <h2 className="card-title">{data['title']}</h2>
+        <p className="card-content">{data['description']}</p>
         </a>
-    {{< /card >}}
-    {{< card >}}
-        <a href="/ref/python-library/data-types">
-        <h2 className="card-title">Data Types</h2>
-        <p className="card-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
-        </a>
-    {{< /card >}}
-    {{< /cardpane >}}
-    {{< cardpane >}}
-    {{< card >}}
-        <a href="/ref/python-library/public-api">
-        <h2 className="card-title">Analytics and Query API</h2>
-        <p className="card-content">Query and analyze data logged to W&B.</p>
-        </a>
-    {{< /card >}}
-    {{< card >}}
-        <a href="/ref/python-library/launch-library">
-        <h2 className="card-title">Launch Library</h2>
-        <p className="card-content">A collection of launch APIs for W&B.</p>
-        </a>
-    {{< /card >}}
-    {{< /cardpane >}}"""
+    {{{{< /card >}}}}"""
+        card_blocks.append(card)
+
+    # Split into two panes
+    midpoint = (len(card_blocks) + 1) // 2
+    panes = [
+        "{{< cardpane >}}\n" + "\n".join(card_blocks[:midpoint]) + "\n{{< /cardpane >}}",
+        "{{< cardpane >}}\n" + "\n".join(card_blocks[midpoint:]) + "\n{{< /cardpane >}}"
+    ]
+    cardpane = "\n".join(panes)
 
     with open(index_file, 'w') as file:
-        file.write("---\ntitle: " + title + "\n---\n")
-        file.write(cardpane)
-     
+        file.write(f"---\ntitle: {title}\n---\n{cardpane}")
     print(f"Created {index_file}\n")
-    return
 
 
 def main(args):
     print("\nChecking for _index.md files...")
-    create_markdown_index_page(args.source_directory)  # For testing purposes
+    create_markdown_index_page(args.source_directory)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--source_directory", default="python-library", help="directory where the markdown exist")
+    parser.add_argument("--source_directory", default="python-library", help="Directory where the markdown files exist")
     args = parser.parse_args()
     main(args)

@@ -7,32 +7,58 @@ import re
 import yaml
 import argparse
 
-def main(args):
-    source_directory = args.source_directory
-    root_directory = args.destination_directory
+from configuration import SOURCE
 
-    # # Define object_type to subfolder mapping
-    type_to_subfolder = {
-        "api": "actions",
-        "data-type": "data-type",
-        "public_apis_namespace": "public-api",
-        "launch_apis_namespace": "launch-library",  
-        #"launch_apis_namespace": os.path.join("actions", "launch-library"),  # Make it a subdirectory under actions
+def build_local_paths(root_directory):
+    """Create folders based on SOURCE and add local_path."""
+    SOURCE_COPY = SOURCE.copy()
+
+    for key in SOURCE_COPY:
+        folder_name = SOURCE_COPY[key]["hugo_specs"]["folder_name"]
+        local_path = os.path.join(root_directory, folder_name)
+        SOURCE_COPY[key]["hugo_specs"]["local_path"] = local_path
+        os.makedirs(local_path, exist_ok=True)
+
+    return SOURCE_COPY
+
+def create_object_type_lookup(source_dict):
+    """Map object_type values from frontmatter to SOURCE keys.
+    
+    Creates a reverse index from SOURCE dict mapping—where the "object_type"
+    value in the "frontmatter" is the key. E.g.
+
+    "LAUNCH_API": {
+    "module": "wandb.sdk.launch",
+    "file_path": "/GitHub/wandb/wandb/sdk/launch/__init__.py",
+    "hugo_specs": {
+        "title": "Launch Library",
+        "description": "A collection of launch APIs for W&B.",
+        "frontmatter": "object_type: launch_apis_namespace",
+        "folder_name": "launch-library",
+    },
+
+    This is a utility function that creates a dictionary mapping
+    object_type values found in the frontmatter to their corresponding
+    keys in the SOURCE dictionary. This allows for easy lookup when
+    sorting markdown files based on their object_type.
+
+    Args:
+        source_dict (dict): The SOURCE dictionary containing the configuration.
+    """
+    return {
+        v["hugo_specs"]["frontmatter"].split(": ")[1]: k for k, v in source_dict.items()
     }
 
-    # Ensure all destination subdirectories exist
-    object_type_to_dir = {
-        key: os.path.join(root_directory, subfolder)
-        for key, subfolder in type_to_subfolder.items()
-    }
-
-    for directory in object_type_to_dir.values():
-        os.makedirs(directory, exist_ok=True)
-
-    # Pattern to match YAML frontmatter
+def sort_markdown_files(source_directory, source_copy):
+    """Read markdown files, extract object_type, and sort them."""
     frontmatter_pattern = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
 
-    # Iterate over markdown files in the source directory
+    # Create dictionary where the keys are object_type values from frontmatter
+    # and the values are the corresponding keys in the SOURCE dictionary
+    object_type_to_key = create_object_type_lookup(source_copy)
+    # Returns something lke:
+    # {'api': 'SDK', 'data-type': 'DATATYPE', 'public_apis_namespace': 'PUBLIC_API', 'launch_apis_namespace': 'LAUNCH_API'}
+
     for filepath in glob.glob(os.path.join(os.getcwd(), source_directory, '*.md')):
         print(f"Reading in {filepath} for sorting...")
 
@@ -51,14 +77,29 @@ def main(args):
             continue
 
         object_type = frontmatter.get("object_type")
-        target_dir = object_type_to_dir.get(object_type)
+        if not object_type:
+            print(f"Skipping {filepath}: No object_type in frontmatter.")
+            continue
 
-        if not target_dir:
+        source_key = object_type_to_key.get(object_type)
+        if not source_key:
             print(f"Skipping {filepath}: Unknown object_type '{object_type}'.")
             continue
 
-        target_path = os.path.join(target_dir, os.path.basename(filepath))
-        shutil.move(filepath, target_path)
+        destination_dir = source_copy[source_key]["hugo_specs"]["local_path"]
+        destination_path = os.path.join(destination_dir, os.path.basename(filepath))
+        print(f"Copying to {destination_path}")
+        shutil.copy(filepath, destination_path)
+
+def main(args):
+    source_directory = args.source_directory
+    root_directory = args.destination_directory
+
+    # Step 1: Build folder structure and local_path mapping
+    source_copy = build_local_paths(root_directory)
+
+    # Step 2: Sort markdown files based on frontmatter
+    sort_markdown_files(source_directory, source_copy)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
