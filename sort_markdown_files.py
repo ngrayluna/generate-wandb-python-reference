@@ -7,25 +7,17 @@ import re
 import yaml
 import argparse
 
+from configuration import SOURCE
+
 def main(args):
     source_directory = args.source_directory
     root_directory = args.destination_directory
 
-    # # Define object_type to subfolder mapping
-    type_to_subfolder = {
-        "api": "actions",
-        "data-type": "data-type",
-        "public_apis_namespace": "public-api",
-        "launch_apis_namespace": "launch-library",  
-        #"launch_apis_namespace": os.path.join("actions", "launch-library"),  # Make it a subdirectory under actions
-    }
-
     # Ensure all destination subdirectories exist
     object_type_to_dir = {
-        key: os.path.join(root_directory, subfolder)
-        for key, subfolder in type_to_subfolder.items()
+        key: os.path.join(root_directory, subfolder["hugo_specs"]["folder_name"]) for key, subfolder in SOURCE.items()
     }
-
+    
     for directory in object_type_to_dir.values():
         os.makedirs(directory, exist_ok=True)
 
