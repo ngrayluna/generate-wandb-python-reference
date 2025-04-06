@@ -53,8 +53,13 @@ def sort_markdown_files(source_directory, source_copy):
     """Read markdown files, extract object_type, and sort them."""
     frontmatter_pattern = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
 
-    # Get the dictionary key from SOURCE based on object_type
+    # Create dictionary where the keys are object_type values from frontmatter
+    # and the values are the corresponding keys in the SOURCE dictionary
     object_type_to_key = create_object_type_lookup(source_copy)
+    # Returns something lke:
+    # {'api': 'SDK', 'data-type': 'DATATYPE', 'public_apis_namespace': 'PUBLIC_API', 'launch_apis_namespace': 'LAUNCH_API'}
+
+    print("object_type_to_key mapping:", object_type_to_key)
 
     for filepath in glob.glob(os.path.join(os.getcwd(), source_directory, '*.md')):
         print(f"Reading in {filepath} for sorting...")
