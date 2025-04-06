@@ -59,8 +59,6 @@ def sort_markdown_files(source_directory, source_copy):
     # Returns something lke:
     # {'api': 'SDK', 'data-type': 'DATATYPE', 'public_apis_namespace': 'PUBLIC_API', 'launch_apis_namespace': 'LAUNCH_API'}
 
-    print("object_type_to_key mapping:", object_type_to_key)
-
     for filepath in glob.glob(os.path.join(os.getcwd(), source_directory, '*.md')):
         print(f"Reading in {filepath} for sorting...")
 
