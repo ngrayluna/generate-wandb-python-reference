@@ -2,6 +2,8 @@
 import os
 import argparse
 
+from configuration import SOURCE
+
 page_content = {
     "public-api": {
         "title": "Analytics and Query API",
@@ -33,11 +35,14 @@ def create_markdown_index_page(root_directory):
     """
     for dirpath, dirnames, filenames in os.walk(root_directory):
         if '_index.md' not in filenames:
+
+            # Root directory requires a special case for the top-level index
             if dirpath ==  "python-library":
                 create_python_index_file(dirpath)
                 continue
             
             dir_name = os.path.basename(dirpath)
+            print(f"Creating _index.md for directory: {dir_name}")
             if dir_name in page_content:
                 new_title = page_content[dir_name]["title"]
                 description = page_content[dir_name]["description"]
