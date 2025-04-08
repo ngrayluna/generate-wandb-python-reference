@@ -13,13 +13,21 @@ def build_local_paths(root_directory):
     """Create folders based on SOURCE and add local_path."""
     SOURCE_COPY = SOURCE.copy()
 
-    for key in SOURCE_COPY:
-        folder_name = SOURCE_COPY[key]["hugo_specs"]["folder_name"]
-        local_path = os.path.join(root_directory, folder_name)
+    for key, config in SOURCE_COPY.items():
+        folder_name = config["hugo_specs"]["folder_name"]
+        parent_key = config["hugo_specs"].get("parent_key")
+
+        if parent_key:
+            parent_path = SOURCE_COPY[parent_key]["hugo_specs"]["local_path"]
+            local_path = os.path.join(parent_path, folder_name)
+        else:
+            local_path = os.path.join(root_directory, folder_name)
+
         SOURCE_COPY[key]["hugo_specs"]["local_path"] = local_path
         os.makedirs(local_path, exist_ok=True)
 
     return SOURCE_COPY
+
 
 def create_object_type_lookup(source_dict):
     """Map object_type values from frontmatter to SOURCE keys.
