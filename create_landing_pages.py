@@ -13,7 +13,8 @@ def build_page_content_from_source():
         folder = value["hugo_specs"]["folder_name"]
         title = value["hugo_specs"].get("title", folder.replace("-", " ").title())
         description = value["hugo_specs"].get("description", "No description available.")
-        content[folder] = {"title": title, "description": description}
+        weight = value["hugo_specs"].get("weight", 0)
+        content[folder] = {"title": title, "description": description, "weight": weight}
     return content
 
 
@@ -37,10 +38,14 @@ def create_markdown_index_page(root_directory):
         print(f"Creating _index.md for directory: {dir_name}")
         title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").title())
         description = page_content.get(dir_name, {}).get("description", "No description available.")
+        weight = page_content.get(dir_name, {}).get("weight", 0)
 
         index_file = os.path.join(dirpath, "_index.md")
         with open(index_file, 'w') as file:
-            file.write(f"---\ntitle: {title}\n---\n{description}\n")
+            if weight:
+                file.write(f"---\ntitle: {title}\nweight: {weight}\n---\n{description}\n")
+            else:
+                file.write(f"---\ntitle: {title}\n---\n{description}\n")
         print(f"Created {index_file}\n")
 
 

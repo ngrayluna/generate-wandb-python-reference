@@ -7,6 +7,7 @@ SOURCE = {
             "description": "Use during training to log experiments, track metrics, and save model artifacts.",
             "frontmatter": "object_type: api",
             "folder_name": "actions",
+            "weight": 1,
         },
     },
     "DATATYPE": {
@@ -18,6 +19,7 @@ SOURCE = {
             "frontmatter": "object_type: data-type",
             "folder_name": "data-type",
             "parent_key": "SDK",  # <- this defines the parent-child relationship
+            "weight": 2,
         },
     },
     "PUBLIC_API": {
@@ -28,6 +30,7 @@ SOURCE = {
             "description": "Query and analyze data logged to W&B.",
             "frontmatter": "object_type: public_apis_namespace",
             "folder_name": "public-api",
+            "weight": 3,
         },
     },
     "LAUNCH_API": {
