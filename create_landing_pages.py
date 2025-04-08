@@ -48,7 +48,7 @@ def create_python_index_file(filepath, page_content):
     """Create an _index.md file for the top-level python-library folder."""
 
     index_file = os.path.join(filepath, "_index.md")
-    title = "Python"
+    title = "Python API Reference"
 
     # Generate cards dynamically from page_content
     card_blocks = []
