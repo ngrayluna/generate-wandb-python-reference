@@ -5,6 +5,7 @@ import re
 import inspect
 import argparse
 import importlib  # make sure this is at the top
+from inspect import isclass, isfunction, ismodule
 
 # import wandb
 from lazydocs import MarkdownGenerator
@@ -48,12 +49,12 @@ class DocodileMaker:
 
     def _update_object_type(self):
         """Determine the type of the object."""
-        attr_type = str(type(self._object_attribute))
-        if attr_type == "<class 'type'>":
+        attr = self._object_attribute
+        if isclass(attr):
             self._object_type = "class"
-        elif attr_type == "<class 'function'>":
+        elif isfunction(attr):
             self._object_type = "function"
-        elif attr_type == "<class 'module'>":
+        elif ismodule(attr):
             self._object_type = "module"
         else:
             self._object_type = "other"

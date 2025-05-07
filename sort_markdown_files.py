@@ -12,18 +12,23 @@ from configuration import SOURCE
 def build_local_paths(root_directory):
     """Create folders based on SOURCE and add local_path."""
     SOURCE_COPY = SOURCE.copy()
-
+    
+    # First create the sdk directory
+    sdk_dir = os.path.join(root_directory, "sdk")
+    os.makedirs(sdk_dir, exist_ok=True)
+    
     for key, config in SOURCE_COPY.items():
         folder_name = config["hugo_specs"]["folder_name"]
-        parent_key = config["hugo_specs"].get("parent_key")
-
-        if parent_key:
-            parent_path = SOURCE_COPY[parent_key]["hugo_specs"]["local_path"]
-            local_path = os.path.join(parent_path, folder_name)
+        
+        if key in ["SDK", "DATATYPE"]:
+            # Place SDK and DATATYPE entries under the sdk directory
+            local_path = os.path.join(sdk_dir, folder_name)
         else:
+            # Place other entries directly under root_directory
             local_path = os.path.join(root_directory, folder_name)
-
+            
         SOURCE_COPY[key]["hugo_specs"]["local_path"] = local_path
+        print(f"Creating directory: {local_path}")
         os.makedirs(local_path, exist_ok=True)
 
     return SOURCE_COPY
