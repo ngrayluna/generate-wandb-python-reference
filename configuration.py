@@ -18,7 +18,6 @@ SOURCE = {
             "description": "Defines Data Types for logging interactive visualizations to W&B.",
             "frontmatter": "object_type: data-type",
             "folder_name": "data-type",
-            "parent_key": "SDK",  # <- this defines the parent-child relationship
             "weight": 2,
         },
     },
