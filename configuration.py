@@ -3,7 +3,7 @@ SOURCE = {
         "module": "wandb",
         "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.template.pyi",
         "hugo_specs" : {
-            "title": "SDK Python Reference",
+            "title": "Actions",
             "description": "Use during training to log experiments, track metrics, and save model artifacts.",
             "frontmatter": "object_type: python_sdk_actions",
             "folder_name": "actions",
@@ -11,7 +11,7 @@ SOURCE = {
         },
     },
     "DATATYPE": {
-        "module": "wandb",
+        "module": "wandb.sdk.data_types",
         "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.template.pyi",
         "hugo_specs": {
             "title": "Data Types",
