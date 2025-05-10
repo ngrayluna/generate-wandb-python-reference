@@ -2,6 +2,7 @@
 
 import os
 import argparse
+import wandb
 
 from configuration import SOURCE
 
@@ -53,7 +54,7 @@ def create_python_index_file(filepath, page_content):
     """Create an _index.md file for the top-level python-library folder."""
 
     index_file = os.path.join(filepath, "_index.md")
-    title = "Python API Reference"
+    title = f"Python Reference ({wandb.__version__})"
 
     # Generate cards dynamically from page_content
     card_blocks = []
@@ -61,9 +62,9 @@ def create_python_index_file(filepath, page_content):
         url = f"/ref/python-library/{folder}"
         card = f"""    {{{{< card >}}}}
         <a href="{url}">
-        <h2 className="card-title">{data['title']}</h2>
+        <h2 className="card-title">{data['title']}</h2></a>
         <p className="card-content">{data['description']}</p>
-        </a>
+        
     {{{{< /card >}}}}"""
         card_blocks.append(card)
 
@@ -76,8 +77,10 @@ def create_python_index_file(filepath, page_content):
     cardpane = "\n".join(panes)
 
     with open(index_file, 'w') as file:
-        file.write(f"---\ntitle: {title}\n---\n{cardpane}")
+        file.write(f"---\ntitle: {title}\n---\n")
+        file.write(f"{cardpane}\n")
     print(f"Created {index_file}\n")
+
 
 
 def main(args):
