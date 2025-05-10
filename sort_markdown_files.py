@@ -20,8 +20,8 @@ def build_local_paths(root_directory):
     for key, config in SOURCE_COPY.items():
         folder_name = config["hugo_specs"]["folder_name"]
         
-        if key in ["SDK", "DATATYPE"]:
-            # Place SDK and DATATYPE entries under the sdk directory
+        if key in ["SDK", "DATATYPE", "LAUNCH_API"]:
+            # Place module in SDK Directory
             local_path = os.path.join(sdk_dir, folder_name)
         else:
             # Place other entries directly under root_directory
