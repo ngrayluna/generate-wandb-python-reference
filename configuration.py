@@ -5,7 +5,7 @@ SOURCE = {
         "hugo_specs" : {
             "title": "SDK Python Reference",
             "description": "Use during training to log experiments, track metrics, and save model artifacts.",
-            "frontmatter": "object_type: api",
+            "frontmatter": "object_type: python_sdk_actions",
             "folder_name": "actions",
             "weight": 1,
         },
@@ -16,7 +16,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Data Types",
             "description": "Defines Data Types for logging interactive visualizations to W&B.",
-            "frontmatter": "object_type: data-type",
+            "frontmatter": "object_type: python_sdk_data_type",
             "folder_name": "data-type",
             "weight": 2,
         },
