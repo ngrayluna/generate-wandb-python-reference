@@ -320,24 +320,57 @@ def main(args):
         #         # Create markdown file for the API
         #         create_markdown(docodile, generator)
 
+        # symbol_to_module = get_symbol_module_map(SOURCE_DICT_COPY[k]["file_path"])
+
+        # # Attempt to resolve each API
+        # for api in SOURCE_DICT_COPY[k]["apis_found"]:
+        #     fallback_module = SOURCE_DICT_COPY[k]["module"]
+        #     resolved_module = symbol_to_module.get(api, fallback_module)
+            
+        #     print("API:", api)
+        #     print("Fallback module:", fallback_module)
+        #     print("Resolved module:", resolved_module)
+
+        #     try:
+        #         module_obj = importlib.import_module(resolved_module)
+        #         docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
+
+        #         if docodile.object_type in valid_object_types:
+        #             create_markdown(docodile, generator)
+        #         else:
+        #             print(f"[WARN] Unsupported type for: {api}")
+        #     except (ImportError, AttributeError) as e:
+        #         print(f"[ERROR] Failed to resolve {api}: {e}")        
+
         symbol_to_module = get_symbol_module_map(SOURCE_DICT_COPY[k]["file_path"])
 
-        # Attempt to resolve each API
         for api in SOURCE_DICT_COPY[k]["apis_found"]:
             fallback_module = SOURCE_DICT_COPY[k]["module"]
             resolved_module = symbol_to_module.get(api, fallback_module)
-            print("Resolved module:", resolved_module)
 
             try:
-                module_obj = importlib.import_module(resolved_module)
-                docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
+                # Always import the fallback module (top-level package)
+                module_obj = importlib.import_module(fallback_module)
+
+                # Try to retrieve the attribute
+                if hasattr(module_obj, api):
+                    docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
+                else:
+                    # Try resolved module only if different
+                    if resolved_module != fallback_module:
+                        sub_module_obj = importlib.import_module(resolved_module)
+                        docodile = DocodileMaker(sub_module_obj, api, args.temp_output_directory, SOURCE)
+                    else:
+                        print(f"[WARN] {api} not found in {fallback_module}")
+                        continue
 
                 if docodile.object_type in valid_object_types:
                     create_markdown(docodile, generator)
                 else:
                     print(f"[WARN] Unsupported type for: {api}")
-            except (ImportError, AttributeError) as e:
-                print(f"[ERROR] Failed to resolve {api}: {e}")        
+
+            except (ImportError, AttributeError, TypeError) as e:
+                print(f"[ERROR] Failed to resolve {api} from {resolved_module}: {e}")
 
 
 
