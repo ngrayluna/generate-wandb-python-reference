@@ -20,16 +20,6 @@ SOURCE = {
             "folder_name": "data-type",
             "weight": 2,
         },
-    },
-    "LAUNCH_API": {
-        "module": "wandb.sdk.launch",
-        "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/launch/__init__.py",
-        "hugo_specs": {
-            "title": "Launch Library Reference",
-            "description": "A collection of launch APIs for W&B.",
-            "frontmatter": "object_type: launch_apis_namespace",
-            "folder_name": "launch-library",
-        },
     },    
     "PUBLIC_API": {
         "module": "wandb.apis.public",
@@ -51,5 +41,15 @@ SOURCE = {
             "frontmatter": "object_type: automations_namespace",
             "folder_name": "automations"
         },
-    }
+    },
+    "LAUNCH_API": {
+        "module": "wandb.sdk.launch",
+        "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/launch/__init__.py",
+        "hugo_specs": {
+            "title": "Launch Library Reference",
+            "description": "A collection of launch APIs for W&B.",
+            "frontmatter": "object_type: launch_apis_namespace",
+            "folder_name": "launch-library",
+        },
+    },
 }
