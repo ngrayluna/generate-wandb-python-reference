@@ -300,52 +300,27 @@ def main(args):
 
     # Get list of APIs from the __init__ files for each namespace
     # and add to the SOURCE_DICT_COPY dictionary.
-    for k in list(SOURCE_DICT_COPY.keys()): # ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
+    for k in list(SOURCE_DICT_COPY.keys()): # Returns key from configuration.py ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
 
-        # Get APIS for each namespace
+        # Get APIs for each namespace
         if "apis_found" not in SOURCE_DICT_COPY[k]:
-            # Go through each key in the SOURCE dictionary ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
-            SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])  # e.g. SOURCE_DICT_COPY["SDK"]["file_path"]     
+            # Go through each key in the SOURCE dictionary 
+            # Returns top level keys in SOURCE dict and stores into list ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
+            SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])
 
-        # Get components needed to create markdown files for Hugo
-        # for api in SOURCE_DICT_COPY[k]["apis_found"]:
-        #     print(k, api)
-        #     print(SOURCE_DICT_COPY[k]["module"])
-            
-        #     module_obj = importlib.import_module(SOURCE_DICT_COPY[k]["module"])
-        #     docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
-
-        #     # Check if object type defined in source code is valid
-        #     if docodile.object_type in valid_object_types:
-        #         # Create markdown file for the API
-        #         create_markdown(docodile, generator)
-
-        # symbol_to_module = get_symbol_module_map(SOURCE_DICT_COPY[k]["file_path"])
-
-        # # Attempt to resolve each API
-        # for api in SOURCE_DICT_COPY[k]["apis_found"]:
-        #     fallback_module = SOURCE_DICT_COPY[k]["module"]
-        #     resolved_module = symbol_to_module.get(api, fallback_module)
-            
-        #     print("API:", api)
-        #     print("Fallback module:", fallback_module)
-        #     print("Resolved module:", resolved_module)
-
-        #     try:
-        #         module_obj = importlib.import_module(resolved_module)
-        #         docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
-
-        #         if docodile.object_type in valid_object_types:
-        #             create_markdown(docodile, generator)
-        #         else:
-        #             print(f"[WARN] Unsupported type for: {api}")
-        #     except (ImportError, AttributeError) as e:
-        #         print(f"[ERROR] Failed to resolve {api}: {e}")        
-
-        symbol_to_module = get_symbol_module_map(SOURCE_DICT_COPY[k]["file_path"])
-
+        # Get the symbol to module mapping for each API
+        # Returns a dict of symbol to module mapping
+        # e.g.  {'Api': 'wandb.apis.public.api', 'RetryingClient': 'wandb.apis.public.api', ...}
+        symbol_to_module = get_symbol_module_map(SOURCE_DICT_COPY[k]["file_path"]) 
+        
+        # Get the list of APIs for the current namespace
         for api in SOURCE_DICT_COPY[k]["apis_found"]:
-            fallback_module = SOURCE_DICT_COPY[k]["module"]
+            # Get the fallback module from the SOURCE dictionary # e.g. "wandb.apis.public"
+            fallback_module = SOURCE_DICT_COPY[k]["module"] 
+            # Get the resolved module from the symbol_to_module mapping
+            # This is used because the API may be imported from a different module
+            # e.g. Run is declared in wandb.__init__.template.pyi as part of __all__,
+            # while actually being defined in another submodule, wandb.sdk.wandb_run.
             resolved_module = symbol_to_module.get(api, fallback_module)
 
             try:
@@ -371,8 +346,6 @@ def main(args):
 
             except (ImportError, AttributeError, TypeError) as e:
                 print(f"[ERROR] Failed to resolve {api} from {resolved_module}: {e}")
-
-
 
 
 if __name__  == "__main__":
