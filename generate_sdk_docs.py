@@ -253,6 +253,30 @@ def get_api_list_from_init(file_path):
 
     return result
 
+def get_symbol_module_map(pyi_path: str) -> dict[str, str]:
+    """
+    Build a basic map of symbol -> actual module from `from ... import ...` statements.
+    """
+
+    mapping = {}
+    import_pattern = re.compile(r"from ([\w\.]+) import (.+)")
+
+    with open(pyi_path, "r") as f:
+        for line in f:
+            match = import_pattern.match(line.strip())
+            if match:
+                module_path, symbols = match.groups()
+                for part in symbols.split(","):
+                    part = part.strip()
+                    if " as " in part:
+                        original, alias = [x.strip() for x in part.split(" as ")]
+                        mapping[alias] = module_path
+                    else:
+                        mapping[part] = module_path
+    return mapping
+
+
+
 def main(args):
     src_base_url = "https://github.com/wandb/wandb/tree/main/"
     valid_object_types = [ "module", "class", "function"]
@@ -275,23 +299,54 @@ def main(args):
     ## End Temporary ##
 
     # Get list of APIs from the __init__ files for each namespace
-    for k in list(SOURCE_DICT_COPY.keys()):
+    # and add to the SOURCE_DICT_COPY dictionary.
+    for k in list(SOURCE_DICT_COPY.keys()): # Returns key from configuration.py ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
 
-        # Get APIS for each namespace
+        # Get APIs for each namespace
         if "apis_found" not in SOURCE_DICT_COPY[k]:
-            SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])        
+            # Go through each key in the SOURCE dictionary 
+            # Returns top level keys in SOURCE dict and stores into list ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
+            SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])
 
-        # Get components needed to create markdown files for Hugo
-        for api in SOURCE_DICT_COPY[k]["apis_found"]:            
-            print(k, api)
-            print(SOURCE_DICT_COPY[k]["module"])
-            module_obj = importlib.import_module(SOURCE_DICT_COPY[k]["module"])
-            docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
+        # Get the symbol to module mapping for each API
+        # Returns a dict of symbol to module mapping
+        # e.g.  {'Api': 'wandb.apis.public.api', 'RetryingClient': 'wandb.apis.public.api', ...}
+        symbol_to_module = get_symbol_module_map(SOURCE_DICT_COPY[k]["file_path"]) 
+        
+        # Get the list of APIs for the current namespace
+        for api in SOURCE_DICT_COPY[k]["apis_found"]:
+            # Get the fallback module from the SOURCE dictionary # e.g. "wandb.apis.public"
+            fallback_module = SOURCE_DICT_COPY[k]["module"] 
+            # Get the resolved module from the symbol_to_module mapping
+            # This is used because the API may be imported from a different module
+            # e.g. Run is declared in wandb.__init__.template.pyi as part of __all__,
+            # while actually being defined in another submodule, wandb.sdk.wandb_run.
+            resolved_module = symbol_to_module.get(api, fallback_module)
 
-            # Check if object type defined in source code is valid
-            if docodile.object_type in valid_object_types:
-                # Create markdown file for the API
-                create_markdown(docodile, generator)
+            try:
+                # Always import the fallback module (top-level package)
+                module_obj = importlib.import_module(fallback_module)
+
+                # Try to retrieve the attribute
+                if hasattr(module_obj, api):
+                    docodile = DocodileMaker(module_obj, api, args.temp_output_directory, SOURCE)
+                else:
+                    # Try resolved module only if different
+                    if resolved_module != fallback_module:
+                        sub_module_obj = importlib.import_module(resolved_module)
+                        docodile = DocodileMaker(sub_module_obj, api, args.temp_output_directory, SOURCE)
+                    else:
+                        print(f"[WARN] {api} not found in {fallback_module}")
+                        continue
+
+                if docodile.object_type in valid_object_types:
+                    create_markdown(docodile, generator)
+                else:
+                    print(f"[WARN] Unsupported type for: {api}")
+
+            except (ImportError, AttributeError, TypeError) as e:
+                print(f"[ERROR] Failed to resolve {api} from {resolved_module}: {e}")
+
 
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()
