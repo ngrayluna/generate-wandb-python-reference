@@ -48,13 +48,7 @@ def create_markdown_index_page(root_directory):
         # Check if the directory name contains "sdk" and adjust the title accordingly
         # This is a workaround for the SDK module
         if "sdk" in dir_name:
-            with open(index_file, 'w') as file:
-                file.write(f"---\ntitle: {title.upper()} v({wandb.__version__})\n")
-                file.write(f"module: {module_name}\n")
-                file.write(f"weight: {weight}\n")
-                file.write("no_list: true\n")
-                file.write("---\n")
-                file.write(f"{description}\n")
+            create_python_sdk_index_file(index_file, dir_name,  page_content)
         else:
             # For other directories, use the original title
             with open(index_file, 'w') as file:
@@ -67,6 +61,23 @@ def create_markdown_index_page(root_directory):
 
         print(f"Created {index_file}\n")
 
+def create_python_sdk_index_file(filepath,dir_name, page_content):
+
+    manual_description = """Train and fine-tune models, manage models from experimentation to production. For guides and examples, see https://docs.wandb.ai."""
+
+    title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").title())
+    module_name = page_content.get(dir_name, {}).get("module", "")
+    weight = page_content.get(dir_name, {}).get("weight", 0) 
+
+    with open(filepath, 'w') as file:
+        file.write(f"---\ntitle: {title.upper()} v({wandb.__version__})\n")
+        file.write(f"module: {module_name}\n")
+        file.write(f"weight: {weight}\n")
+        file.write("no_list: true\n")
+        file.write("---\n")
+        file.write(manual_description)
+    return
+
 
 def create_python_index_file(filepath, page_content):
     """Create an _index.md file for the top-level python-library folder."""
@@ -77,7 +88,7 @@ def create_python_index_file(filepath, page_content):
     # Generate cards dynamically from page_content
     card_blocks = []
     for folder, data in page_content.items():
-        if "sdk" not in data['module']:
+        if "sdk" not in data['module'] and data['title'] != "Actions":
             url = f"/ref/python-library/{folder}"
             card = f"""    {{{{< card >}}}}
             <a href="{url}">
@@ -89,6 +100,15 @@ def create_python_index_file(filepath, page_content):
         else:
             # Skip SDK modules for the top-level index
             continue
+
+    url = f"/ref/python-library/sdk"   
+    manual_card = f"""    {{{{< card >}}}}
+        <a href="{url}">
+        <h2 className="card-title">Python SDK</h2></a>
+        <p className="card-content">Train and fine-tune models, manage models from experimentation to production.</p>
+    
+    {{{{< /card >}}}}"""
+    card_blocks.append(manual_card)
 
     # Split into two panes
     midpoint = (len(card_blocks) + 1) // 2
