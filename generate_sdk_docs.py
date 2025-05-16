@@ -125,7 +125,10 @@ def add_frontmatter(docodile):
     Args:
         filename (str): Name of the file.
     """
-    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + "---\n\n"
+    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + _data_type_key_string(docodile) + "---\n\n"
+
+def _data_type_key_string(docodile):
+    return f"data_type_classification: {docodile.object_type}\n"
 
 
 def _github_button(href_links):
