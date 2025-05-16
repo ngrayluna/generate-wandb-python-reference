@@ -142,7 +142,8 @@ def sort_global_functions(global_module_path, filepath):
         #print(f"Checking {filepath} for global functions")
         frontmatter = read_markdown_metadata(filepath)
 
-        title = frontmatter.get("title")
+        title = frontmatter.get("title").split("()")[0]
+        print(f"Title: {title}")
         if not title:
             print(f"Skipping {filepath}: No title in frontmatter.")
 

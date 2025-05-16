@@ -95,7 +95,13 @@ class DocodileMaker:
 
 def _title_key_string(docodile):
     base_name = os.path.basename(docodile.filename).split('.')[0]
-    return f"title: {base_name}\n"
+
+    if docodile.object_type == "function":
+        return f"title: {base_name}()\n"
+    elif docodile.object_type == "class":
+        return f"title: Class {base_name}\n"
+    else:
+        return f"title: {base_name}\n"
 
 def _type_key_string(docodile):
     """Checks the filepath and checks for substrings (e.g. "sdk", "data_type").
