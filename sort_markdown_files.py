@@ -128,35 +128,26 @@ def read_markdown_metadata(filepath):
 def sort_global_functions(global_module_path, filepath):
     """Find global functions in the source_copy and move them into their own directory."""
 
-    # Create a new directory within filepath
-    #print(f"Searching for global functions in {filepath}")
-
     # Get values listed in module.py
     extracted = extract_set_global_params(global_module_path)
     #print(f"Extracted global functions: {extracted}")
-    # ['run', 'config', 'log', 'summary', 'save', 'use_artifact', 'log_artifact',
-    # 'define_metric', 'alert', 'mark_preempting', 'log_model', 'use_model', 'link_model', 'watch', 'unwatch']
+    # ['run', 'config', 'log', 'summary', 'save', 'use_artifact', 'log_artifact', ...]
 
-    # Go through the list of functions and check if they exist in the filepath
-    #print( "Path to search global", filepath)
-
-    # Try to make a new directory to store all global functions
-    # Making a new directory for global functions
+    # Create a new directory for global functions
     global_functions_dir = os.path.join(os.getcwd(), filepath, "global_functions")
     os.makedirs(global_functions_dir, exist_ok=True)
 
+    # Move the global functions into the new directory
     for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
         #print(f"Checking {filepath} for global functions")
         frontmatter = read_markdown_metadata(filepath)
 
         title = frontmatter.get("title")
-        #print(f"Title: {title}")
         if not title:
             print(f"Skipping {filepath}: No title in frontmatter.")
 
         # Check if the title is in the extracted list
         if title in extracted:
-            #print(f"Found {title} in {filepath}")
             shutil.move(filepath, global_functions_dir)
 
     return
@@ -187,8 +178,7 @@ def main(args):
     # Step 2: Sort markdown files based on frontmatter
     # Returns a set of directories created
     directories_created = sort_markdown_files(source_directory, source_copy)
-    # Returns: {'python-library/sdk/data-type', 'python-library/automations',
-    # 'python-library/sdk/launch-library', 'python-library/public-api', 'python-library/sdk/actions'}
+    # Returns: {'python-library/sdk/data-type', 'python-library/automations', 'python-library/sdk/actions', ...}
 
     # Grab whatever the directory "action" APIs are in
     search_dir = source_copy["SDK"]["hugo_specs"]["folder_name"]  # "actions"
@@ -199,11 +189,7 @@ def main(args):
             break
     print(f"Found global_dir_root: {global_fun_root_path}")
 
-    # Now I know the directory for actions
-    # Check if the directory exists in directories_created
-    # If it does, then we can proceed to sort the global functions
-
-    # Get the global_functions directory
+    # Step 3: Sort global functions into their own directory
     sort_global_functions(global_module_path, global_fun_root_path)
 
 
