@@ -6,6 +6,7 @@ import glob
 import re
 import yaml
 import argparse
+import ast
 
 from configuration import SOURCE
 
@@ -64,7 +65,6 @@ def create_object_type_lookup(source_dict):
 
 def sort_markdown_files(source_directory, source_copy):
     """Read markdown files, extract object_type, and sort them."""
-    frontmatter_pattern = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
 
     # Create dictionary where the keys are object_type values from frontmatter
     # and the values are the corresponding keys in the SOURCE dictionary
@@ -72,22 +72,13 @@ def sort_markdown_files(source_directory, source_copy):
     # Returns something lke:
     # {'api': 'SDK', 'data-type': 'DATATYPE', 'public_apis_namespace': 'PUBLIC_API', 'launch_apis_namespace': 'LAUNCH_API'}
 
+    # Create a set to keep track of directories created
+    directories_created = []
+
     for filepath in glob.glob(os.path.join(os.getcwd(), source_directory, '*.md')):
-        print(f"Reading in {filepath} for sorting...")
 
-        with open(filepath, 'r') as file:
-            content = file.read()
-
-        match = frontmatter_pattern.match(content)
-        if not match:
-            print(f"Skipping {filepath}: No frontmatter found.")
-            continue
-
-        try:
-            frontmatter = yaml.safe_load(match.group(1))
-        except yaml.YAMLError as e:
-            print(f"Error parsing frontmatter in {filepath}: {e}")
-            continue
+        # Get the frontmatter from the markdown file
+        frontmatter = read_markdown_metadata(filepath)
 
         object_type = frontmatter.get("object_type")
         if not object_type:
@@ -99,20 +90,108 @@ def sort_markdown_files(source_directory, source_copy):
             print(f"Skipping {filepath}: Unknown object_type '{object_type}'.")
             continue
 
+        # Get the destination directory from the SOURCE dictionary
         destination_dir = source_copy[source_key]["hugo_specs"]["local_path"]
+        
+        # Keep track of directories created this is used to do further processing later
+        directories_created.append(destination_dir)  
+
         destination_path = os.path.join(destination_dir, os.path.basename(filepath))
+
         print(f"Copying to {destination_path}")
         shutil.copy(filepath, destination_path)
+
+    return set(directories_created)
+
+
+def read_markdown_metadata(filepath):
+    """Read the frontmatter metadata from a markdown file."""
+    with open(filepath, 'r') as file:
+        content = file.read()
+
+    match = re.search(r"^---\n(.*?)\n---", content, re.DOTALL)
+    if not match:
+        return None
+
+    try:
+        frontmatter = yaml.safe_load(match.group(1))
+    except yaml.YAMLError as e:
+        print(f"Error parsing frontmatter in {filepath}: {e}")
+        return None
+
+    return frontmatter
+
+## TO DO 
+# def get_source_key_from_frontmatter(object_type, source_copy):
+#     return
+
+def sort_global_functions(global_module_path, filepath):
+    """Find global functions in the source_copy and move them into their own directory."""
+
+    # Get values listed in module.py
+    extracted = extract_set_global_params(global_module_path)
+    #print(f"Extracted global functions: {extracted}")
+    # ['run', 'config', 'log', 'summary', 'save', 'use_artifact', 'log_artifact', ...]
+
+    # Create a new directory for global functions
+    global_functions_dir = os.path.join(os.getcwd(), filepath, "global_functions")
+    os.makedirs(global_functions_dir, exist_ok=True)
+
+    # Move the global functions into the new directory
+    for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
+        #print(f"Checking {filepath} for global functions")
+        frontmatter = read_markdown_metadata(filepath)
+
+        title = frontmatter.get("title")
+        if not title:
+            print(f"Skipping {filepath}: No title in frontmatter.")
+
+        # Check if the title is in the extracted list
+        if title in extracted:
+            shutil.move(filepath, global_functions_dir)
+
+    return
+
+
+def extract_set_global_params(file_path):
+    with open(file_path, "r") as f:
+        tree = ast.parse(f.read(), filename=file_path)
+
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == "set_global":
+            return [arg.arg for arg in node.args.args]
+
+    return []
+
 
 def main(args):
     source_directory = args.source_directory
     root_directory = args.destination_directory
 
+    ## TEMP
+    global_module_path = "/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/lib/module.py"
+    ## END TEMP
+
     # Step 1: Build folder structure and local_path mapping
     source_copy = build_local_paths(root_directory)
 
     # Step 2: Sort markdown files based on frontmatter
-    sort_markdown_files(source_directory, source_copy)
+    # Returns a set of directories created
+    directories_created = sort_markdown_files(source_directory, source_copy)
+    # Returns: {'python-library/sdk/data-type', 'python-library/automations', 'python-library/sdk/actions', ...}
+
+    # Grab whatever the directory "action" APIs are in
+    search_dir = source_copy["SDK"]["hugo_specs"]["folder_name"]  # "actions"
+    
+    for partial_path in directories_created:
+        if os.path.split(partial_path)[-1] == search_dir:
+            global_fun_root_path = partial_path
+            break
+    print(f"Found global_dir_root: {global_fun_root_path}")
+
+    # Step 3: Sort global functions into their own directory
+    sort_global_functions(global_module_path, global_fun_root_path)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
