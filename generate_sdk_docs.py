@@ -95,7 +95,13 @@ class DocodileMaker:
 
 def _title_key_string(docodile):
     base_name = os.path.basename(docodile.filename).split('.')[0]
-    return f"title: {base_name}\n"
+
+    if docodile.object_type == "function":
+        return f"title: {base_name}()\n"
+    elif docodile.object_type == "class":
+        return f"title: Class {base_name}\n"
+    else:
+        return f"title: {base_name}\n"
 
 def _type_key_string(docodile):
     """Checks the filepath and checks for substrings (e.g. "sdk", "data_type").
@@ -113,11 +119,7 @@ def _type_key_string(docodile):
         return SOURCE["AUTOMATIONS"]["hugo_specs"]["frontmatter"] + "\n"
     else:
         return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
-
-def get_type_key_string(self):
-    # Make a method that returns the definition specified
-    # in _type_key_string
-    return    
+ 
 
 def add_frontmatter(docodile):
     """Add frontmatter to the markdown file.
@@ -125,8 +127,11 @@ def add_frontmatter(docodile):
     Args:
         filename (str): Name of the file.
     """
-    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + "---\n\n"
+    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + _data_type_key_string(docodile) + "---\n\n"
 
+def _data_type_key_string(docodile):
+    """Add "function" or "Class" to the frontmatter."""
+    return f"data_type_classification: {docodile.object_type}\n"
 
 def _github_button(href_links):
     """To do: Add hugo scripting to add this function. For now, just add code line # for debugging.
