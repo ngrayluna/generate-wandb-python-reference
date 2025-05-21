@@ -99,7 +99,7 @@ def _title_key_string(docodile):
     if docodile.object_type == "function":
         return f"title: {base_name}()\n"
     elif docodile.object_type == "class":
-        return f"title: Class {base_name}\n"
+        return f"title: {base_name}\n"
     else:
         return f"title: {base_name}\n"
 
