@@ -77,7 +77,7 @@ def process_text(markdown_text: str) -> str:
 def main(args):
 
     for filename in glob.glob(os.path.join(os.getcwd(), args.output_directory , '*.md')):
-        print(f"Reading in {filename} for processing...")
+        #print(f"Reading in {filename} for processing...")
         # Read markdown content from file
         with open(filename, 'r') as file:
             markdown_text = file.read()

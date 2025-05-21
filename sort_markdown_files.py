@@ -133,8 +133,8 @@ def sort_global_functions(global_module_path, filepath):
     #print(f"Extracted global functions: {extracted}")
     # ['run', 'config', 'log', 'summary', 'save', 'use_artifact', 'log_artifact', ...]
 
-    # Create a new directory for global functions
-    global_functions_dir = os.path.join(os.getcwd(), filepath, "global_functions")
+    # Create a new directory for global/legacy functions
+    global_functions_dir = os.path.join(os.getcwd(), filepath, "Legacy_functions")
     os.makedirs(global_functions_dir, exist_ok=True)
 
     # Move the global functions into the new directory
@@ -143,7 +143,6 @@ def sort_global_functions(global_module_path, filepath):
         frontmatter = read_markdown_metadata(filepath)
 
         title = frontmatter.get("title").split("()")[0]
-        print(f"Title: {title}")
         if not title:
             print(f"Skipping {filepath}: No title in frontmatter.")
 
@@ -163,6 +162,28 @@ def extract_set_global_params(file_path):
             return [arg.arg for arg in node.args.args]
 
     return []
+
+def sort_functions_and_classes(filepath):
+    """Sort functions and classes into their own directories."""
+    # Create a new directory for functions and classes
+    functions_dir = os.path.join(os.getcwd(), filepath, "Functions")
+    classes_dir = os.path.join(os.getcwd(), filepath, "Classes")
+    os.makedirs(functions_dir, exist_ok=True)
+    os.makedirs(classes_dir, exist_ok=True)
+
+    # Move the functions and classes into their respective directories
+    for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
+        frontmatter = read_markdown_metadata(filepath)
+        datatype = frontmatter.get("data_type_classification")
+        if not datatype:
+            print(f"Skipping {filepath}: No data_type_classification in frontmatter.")
+
+        if "function" in datatype:
+            shutil.move(filepath, functions_dir)
+        elif "class" in datatype:
+            shutil.move(filepath, classes_dir)
+
+    return
 
 
 def main(args):
@@ -192,6 +213,9 @@ def main(args):
 
     # Step 3: Sort global functions into their own directory
     sort_global_functions(global_module_path, global_fun_root_path)
+
+    # Step 4: Sort functions and classes into their own directories
+    sort_functions_and_classes(global_fun_root_path)
 
 
 if __name__ == "__main__":
