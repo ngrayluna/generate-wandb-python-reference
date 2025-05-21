@@ -39,7 +39,7 @@ def create_markdown_index_page(root_directory):
         print(f"Creating _index.md for directory: {dir_name}")
 
         # Get the title, description, and module from the page_content
-        title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").title())
+        title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").replace("_", " ").title())
         description = page_content.get(dir_name, {}).get("description", "")
         module_name = page_content.get(dir_name, {}).get("module", "")
         weight = page_content.get(dir_name, {}).get("weight", 0)
