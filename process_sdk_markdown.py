@@ -23,9 +23,9 @@ class MarkdownCleaner:
             # Remove module names (keep only the base module)
             (re.compile(r'(# <kbd>module</kbd> `[\w\.]+)\.[\w]+`'), r'\1`'),
             
-            # Remove global variables section
-            (re.compile(r"(?s)\*\*Global Variables\*\*\n[-]+\n.*?\n---"), ""),
-            
+            # Remove global variables section (safe version)
+            (re.compile(r"\*\*Global Variables\*\*\n[-]+\n(?:(?!## |# <kbd>)[\s\S])*\n", re.MULTILINE), ""),
+
             # Remove base class links and headers
             (re.compile(r'<a href="[^"]*">\s*<img[^>]*>\s*</a>\s*## <kbd>class</kbd> `Base`'), ""),
             

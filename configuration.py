@@ -10,6 +10,17 @@ SOURCE = {
             "weight": 1,
         },
     },
+    "CUSTOMCHARTS": {
+        "module": "wandb.plot",
+        "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/plot/__init__.py",
+        "hugo_specs" : {
+            "title": "Custom Charts",
+            "description": "Create custom charts and visualizations.",
+            "frontmatter": "object_type: python_sdk_custom_charts",
+            "folder_name": "custom-charts",
+            "weight": 1,
+        },
+    },    
     "DATATYPE": {
         "module": "wandb.sdk.data_types",
         "file_path": "/Users/noahluna/Documents/GitHub/wandb/wandb/__init__.template.pyi",

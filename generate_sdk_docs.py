@@ -117,6 +117,8 @@ def _type_key_string(docodile):
         return SOURCE["LAUNCH_API"]["hugo_specs"]["frontmatter"] + "\n"
     elif "automations" in docodile.getfile_path:
         return SOURCE["AUTOMATIONS"]["hugo_specs"]["frontmatter"] + "\n"
+    elif "plot" in docodile.getfile_path:
+        return SOURCE["CUSTOMCHARTS"]["hugo_specs"]["frontmatter"] + "\n"
     else:
         return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
  
