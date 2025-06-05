@@ -1,6 +1,6 @@
 from pathlib import Path
 
-BASE_DIR = Path(__name__).resolve().parents[1]  # go up from `generate-wandb-python-reference/config/config.py`
+BASE_DIR = Path(__file__).resolve().parents[1]  # go up from `generate-wandb-python-reference/config/config.py`
 
 SOURCE = {
     "SDK": {
@@ -57,14 +57,4 @@ SOURCE = {
             "folder_name": "automations"
         },
     },
-    # "LAUNCH_API": {
-    #     "module": "wandb.sdk.launch",
-    #     "file_path": BASE_DIR / "wandb" / "wandb" / "sdk" / "launch" / "__init__.py",
-    #     "hugo_specs": {
-    #         "title": "Launch Library Reference",
-    #         "description": "A collection of launch APIs for W&B.",
-    #         "frontmatter": "object_type: launch_apis_namespace",
-    #         "folder_name": "launch-library",
-    #     },
-    # },
 }
