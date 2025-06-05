@@ -7,7 +7,6 @@ import argparse
 import importlib  # make sure this is at the top
 from inspect import isclass, isfunction, ismodule
 
-# import wandb
 from lazydocs import MarkdownGenerator
 from typing import List
 
@@ -19,7 +18,8 @@ import sys
 from pathlib import Path
 
 # Path to the local version of the `wandb` package
-local_wandb_path = Path("/Users/noahluna/Documents/GitHub/wandb")
+BASE_DIR = Path(__name__).resolve().parents[1] 
+local_wandb_path = BASE_DIR / "wandb"
 
 # Add the local package path to sys.path
 sys.path.insert(0, str(local_wandb_path))
@@ -301,7 +301,7 @@ def main(args):
 
     ## Temporary ##
     # To do: Remove this method of extracting public APIs from the __init__.py file.
-    import_export_api_list = get_public_apis_from_init("/Users/noahluna/Documents/GitHub/wandb/wandb/apis/public/__init__.py")
+    import_export_api_list = get_public_apis_from_init(local_wandb_path / "wandb" / "apis" / "public" / "__init__.py")
     SOURCE_DICT_COPY["PUBLIC_API"]["apis_found"] = import_export_api_list
     ## End Temporary ##
 
