@@ -7,6 +7,7 @@ import re
 import yaml
 import argparse
 import ast
+from pathlib import Path
 
 from configuration import SOURCE
 
@@ -190,9 +191,9 @@ def main(args):
     source_directory = args.source_directory
     root_directory = args.destination_directory
 
-    ## TEMP
-    global_module_path = "/Users/noahluna/Documents/GitHub/wandb/wandb/sdk/lib/module.py"
-    ## END TEMP
+    # Define the global module path. This has a list of legacy functions that we need to extract but don't advise using.
+    BASE_DIR = Path(__name__).resolve().parents[1] 
+    global_module_path = BASE_DIR / "wandb" / "wandb" / "sdk" / "lib" / "module.py"
 
     # Step 1: Build folder structure and local_path mapping
     source_copy = build_local_paths(root_directory)

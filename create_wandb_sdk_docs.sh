@@ -2,13 +2,32 @@
 
 TEMP_DIR=wandb_sdk_docs
 DESTINATION_DIR=python-library
-HUGO_DIR=/Users/noahluna/Desktop/RandomProjects/docs/content/ref/
+### HUGO_DIR=/Users/noahluna/Desktop/docs/content/ref/
+#HUGO_DIR=/Users/noahluna/Desktop/staging/ref/
 
-# Remove current docs in sdk_docs_temp
-rm -rf $TEMP_DIR/*.md
 
-# Remove current docs in Hugo directory
-rm -rf $HUGO_DIR/$DESTINATION_DIR
+# Check if the script is run from the correct directory
+if [ ! -d "$TEMP_DIR" ]; then
+  mkdir -p "$TEMP_DIR"
+  echo "Directory '$TEMP_DIR' created."
+else
+  echo "Directory '$TEMP_DIR' already exists."
+fi
+
+# Check if the destination directory exists, if not, create it
+if [ ! -d "$DESTINATION_DIR" ]; then
+  mkdir -p "$DESTINATION_DIR"
+  echo "Directory '$DESTINATION_DIR' created."
+else
+  echo "Directory '$DESTINATION_DIR' already exists."
+fi
+
+
+# # Remove current docs in sdk_docs_temp
+# rm -rf $TEMP_DIR/*.md
+
+# # Remove current docs in Hugo directory
+# rm -rf $HUGO_DIR/$DESTINATION_DIR
 
 # Generate SDK docs using lazydocs
 python generate_sdk_docs.py --temp_output_directory=$TEMP_DIR
@@ -27,10 +46,4 @@ python create_landing_pages.py --source_directory=$DESTINATION_DIR
 
 # Move local file with subdirs to Hugo directory
 #echo "Moving files to Hugo directory"
-mv $DESTINATION_DIR $HUGO_DIR
-
-# TO DO: Clean this up
-# Rename README.md to _index.md and move to Hugo directory
-# echo "Moving _index.md"
-# mv $TEMP_DIR/README.md $TEMP_DIR/_index.md 
-# mv $TEMP_DIR/_index.md $HUGO_DIR/$DESTINATION_DIR
+#mv $DESTINATION_DIR $HUGO_DIR
