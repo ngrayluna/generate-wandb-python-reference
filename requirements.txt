@@ -1,0 +1,3 @@
+lazydocs==0.4.8
+PyYAML==6.0.2
+wandb
