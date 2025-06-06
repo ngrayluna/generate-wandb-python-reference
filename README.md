@@ -2,20 +2,63 @@
 
 Scripts that generated markdown docs for Workspaces API and broader W&B Python API documentation.
 
+## Setup
+1. Navigate to the root directory that contains your local clone of the `wandb` repository. This is the directory that contains the `wandb` package.
 
-![2025-04-06 15 49 43](https://github.com/user-attachments/assets/bf598bb4-3e08-47db-9a06-a5429368b730)
+   ```bash
+   cd path/to/your/root/directory/with/wandb/package
+   ```
+2. Clone `generate-wandb-python-reference` repository:
 
+   ```bash
+   git clone https://github.com/user-attachments/generate-wandb-python-reference.git
+   ```
+
+    Your local directory structure should look like this:
+
+    ```text
+    awesome-directory/
+    ├── generate-wandb-python-reference/
+    │   ├── create_wandb_sdk_docs.sh
+    │   ├── generate_sdk_docs.py
+    │   ├── process_markdown.py
+    │   ├── sort_markdown_files.py
+    │   ├── create_landing_pages.py
+    │   ├── requirements.txt
+    │   └── configuration.py
+    └── wandb/
+        ├── wandb/
+        │   ├── __init__.py
+        │   ├── __init__.template.pyi
+        │   └── ... # other files
+        └──
+    ```
+
+3. Install the required dependencies:
+   ```bash
+   cd generate-wandb-python-reference
+   pip install -r requirements.txt
+   ``` 
 
 ## Create W&B Python SDK Docs
 
-The entrypoint for generating the W&B Python SDK docs is the `create_wandb_sdk_docs.sh` script. 
+These scripts use the local cloned version of `wandb` package to generate the markdown files. (This is why you need to clone the `generate-wandb-python-reference` repository into the same directory as your local `wandb` package.)
 
-```bash
+Check out the branch or commit that you want to generate the docs for.
+
+```bash title="wandb"
+git checkout <branch-or-commit>
+```
+
+The entrypoint for generating the W&B Python SDK docs is the `generate-wandb-python-reference/create_wandb_sdk_docs.sh` script.
+
+```bash title="generate-wandb-python-reference"
 bash create_wandb_sdk_docs.sh
 ```
 
-Within the shell script, specify the directory where you want to move the generated markdown files to. Commonly, this the `ref` directory within the Hugo docs directory. 
+The output will be generated in the `wandb/wandb/docs/python-library` directory. The generated markdown files will be organized into subdirectories based on the `object_type` specified in the front matter of each markdown file.
 
+## Overview of the scripts
 The script does the following, in this order:
 
 1. Call `generate_sdk_docs.py` script to generate markdown docs using `lazydocs`. The script uses Classes, functions, and W&B Data Types from `wandb/wandb/__init__.pyi` file.
@@ -48,17 +91,7 @@ If no, then:
             "frontmatter": "object_type: ", # frontmatter, used for sorting
             "folder_name": "", # Desired directory within python-library E.g. python-library/launch-library, python-library/data-type/
         }
+    }
    ```
 
 
-## Test markdown files locally
-
-Within `generate_sdk_docs.py`, uncomment out the code snippet specified in the `USE LOCAL VERSION` comment. This will use the local version of the `wandb` package to generate the markdown docs. 
-
-Ensure to specify the path of your local `wandb` package for:
-
-```python title="generate_sdk_docs.py"
-local_wandb_path = Path("path/to/local/wandb")
-```
-
-Note that the GitHub button front matter will not work locally.
