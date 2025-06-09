@@ -8,9 +8,11 @@ import importlib  # make sure this is at the top
 from inspect import isclass, isfunction, ismodule
 
 from lazydocs import MarkdownGenerator
-from typing import List
+from typing import List, Type
 
 from configuration import SOURCE 
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 
 ###### USE LOCAL VERSION OF WANDB for debugging ######
@@ -34,6 +36,7 @@ class DocodileMaker:
         self.module = module
         self.api_item = api
         self.output_dir = output_dir
+        self.ispydantic = False  # Flag to indicate if the object is a pydantic model
         self._object_attribute = None
         self._object_type = None
         self._file_path = None
@@ -69,6 +72,16 @@ class DocodileMaker:
     def _update_filename(self):
         """Determine the filename of the object."""
         self._filename = os.path.join(os.getcwd(), self.output_dir, self.api_item + ".md")  
+
+    def _check_pydantic(self):
+        """Check if the object is a Pydantic model."""
+        self.ispydantic = issubclass(self._object_attribute, BaseModel)
+
+    @property
+    def isPydantic(self):
+        """Check if the object is a Pydantic model."""
+        self._check_pydantic()
+        return self.ispydantic
 
     @property
     def object_attribute_value(self):
@@ -159,6 +172,45 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
 
+def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
+    """
+    Generate a Google-style class docstring from Pydantic Field descriptions,
+    properly handling multiline descriptions and lists.
+
+    Args:
+        cls (Type[BaseSettings]): The Pydantic Settings class to document.
+
+    Returns:
+        str: A formatted Google-style docstring with clean indentation.
+    """
+    lines = ["Attributes:"]
+    for field_name, field in cls.model_fields.items():
+        field_type = field.annotation
+        field_type_name = (
+            field_type.__name__ if hasattr(field_type, "__name__") else str(field_type)
+        )
+
+        description = field.description or "No description provided."
+
+        # Clean up indentation using inspect.cleandoc()
+        cleaned_description = inspect.cleandoc(description)
+
+        # Split into lines for further indentation adjustments
+        desc_lines = cleaned_description.splitlines()
+
+        # First line (attribute name and initial description)
+        if desc_lines:
+            lines.append(f"- {field_name} ({field_type_name}): {desc_lines[0]}")
+
+            # Additional lines (indented properly)
+            for extra_line in desc_lines[1:]:
+                lines.append(f"    {extra_line}")
+        else:
+            lines.append(f"    {field_name} ({field_type_name}): No description provided.")
+
+    return "\n".join(lines)
+
+
 def create_markdown(docodile, generator):
     """Create markdown file for the API.
     
@@ -174,9 +226,13 @@ def create_markdown(docodile, generator):
         file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
 
-        if docodile.object_type == "class":
+        if docodile.object_type == "class" and docodile.isPydantic:
+            print("Creating Pydantic class markdown", "\n\n")
+            print(f"Generating docstring for Pydantic class: {docodile.api_item}")
+            file.write(generate_Pydantic_docstring(docodile.object_attribute_value))
+        elif docodile.object_type == "class" and not docodile.isPydantic:
             print("Creating class markdown", "\n\n")
-            file.write(generator.class2md(docodile.object_attribute_value))
+            file.write(generator.class2md(docodile.object_attribute_value))        
         elif docodile.object_type == "function":
             print("Creating function markdown", "\n\n")
             file.write(generator.func2md(docodile.object_attribute_value))
