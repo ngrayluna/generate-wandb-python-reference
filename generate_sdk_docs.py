@@ -197,7 +197,9 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
 
         # Split into lines for further indentation adjustments
         desc_lines = cleaned_description.splitlines()
-
+        # Remove leading/trailing whitespace from each line
+        desc_lines = [line.strip() for line in desc_lines if line.strip()]
+        
         # First line (attribute name and initial description)
         if desc_lines:
             lines.append(f"- {field_name} ({field_type_name}): {desc_lines[0]}")
@@ -207,7 +209,6 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
                 lines.append(f"    {extra_line}")
         else:
             lines.append(f"    {field_name} ({field_type_name}): No description provided.")
-
     return "\n".join(lines)
 
 
