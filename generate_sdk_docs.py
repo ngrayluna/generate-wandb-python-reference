@@ -172,10 +172,57 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
 
+# def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
+#     """
+#     Generate a Google-style class docstring from Pydantic Field descriptions,
+#     properly handling multiline descriptions and lists.
+
+#     Args:
+#         cls (Type[BaseSettings]): The Pydantic Settings class to document.
+
+#     Returns:
+#         str: A formatted Google-style docstring with clean indentation.
+#     """
+#     lines = ["Attributes:"]
+#     for field_name, field in cls.model_fields.items():
+#         field_type = field.annotation
+#         field_type_name = (
+#             field_type.__name__ if hasattr(field_type, "__name__") else str(field_type)
+#         )
+
+#         description = field.description or "No description provided."
+
+#         # Clean up indentation using inspect.cleandoc()
+#         cleaned_description = inspect.cleandoc(description)
+
+#         # Split into lines for further indentation adjustments
+#         desc_lines = cleaned_description.splitlines()
+#         # Remove leading/trailing whitespace from each line
+#         desc_lines = [line.strip() for line in desc_lines if line.strip()]
+        
+#         # First line (attribute name and initial description)
+#         if desc_lines:
+#             lines.append(f"- {field_name} ({field_type_name}): {desc_lines[0]}")
+
+#             # Additional lines (indented properly)
+#             for extra_line in desc_lines[1:]:
+#                 lines.append(f"    {extra_line}")
+#         else:
+#             lines.append(f"    {field_name} ({field_type_name}): No description provided.")
+#     return "\n".join(lines)
+
+
+from typing import Type
+from pydantic_settings import BaseSettings
+import inspect
+import pydantic
+
+
 def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
     """
     Generate a Google-style class docstring from Pydantic Field descriptions,
-    properly handling multiline descriptions and lists.
+    properly handling multiline descriptions and selectively documenting fields
+    based on their `repr` setting, sorted alphabetically.
 
     Args:
         cls (Type[BaseSettings]): The Pydantic Settings class to document.
@@ -184,32 +231,46 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
         str: A formatted Google-style docstring with clean indentation.
     """
     lines = ["Attributes:"]
-    for field_name, field in cls.model_fields.items():
-        field_type = field.annotation
-        field_type_name = (
-            field_type.__name__ if hasattr(field_type, "__name__") else str(field_type)
-        )
 
-        description = field.description or "No description provided."
+    # Determine fields to document (repr=True)
+    kept_field_names = {
+        name
+        for name, field_info in cls.model_fields.items()
+        if field_info.repr
+    }
 
-        # Clean up indentation using inspect.cleandoc()
+    # Accumulate descriptions from parent classes if missing
+    field_docs = {}
+    for base_cls in cls.__mro__:
+        if not issubclass(base_cls, pydantic.BaseModel):
+            continue
+
+        for name, field_info in base_cls.model_fields.items():
+            if name in kept_field_names and not field_docs.get(name):
+                description = field_info.description
+                if description:
+                    field_docs[name] = description
+
+    # Construct the docstring lines alphabetically
+    for field_name in sorted(kept_field_names):
+        field_info = cls.model_fields[field_name]
+        field_type = field_info.annotation
+        field_type_name = getattr(field_type, "__name__", str(field_type))
+
+        description = field_docs.get(field_name, "No description provided.")
         cleaned_description = inspect.cleandoc(description)
+        desc_lines = [line.strip() for line in cleaned_description.splitlines() if line.strip()]
 
-        # Split into lines for further indentation adjustments
-        desc_lines = cleaned_description.splitlines()
-        # Remove leading/trailing whitespace from each line
-        desc_lines = [line.strip() for line in desc_lines if line.strip()]
-        
-        # First line (attribute name and initial description)
         if desc_lines:
             lines.append(f"- {field_name} ({field_type_name}): {desc_lines[0]}")
-
-            # Additional lines (indented properly)
             for extra_line in desc_lines[1:]:
                 lines.append(f"    {extra_line}")
         else:
-            lines.append(f"    {field_name} ({field_type_name}): No description provided.")
+            lines.append(f"- {field_name} ({field_type_name}): No description provided.")
+
     return "\n".join(lines)
+
+
 
 
 def create_markdown(docodile, generator):
