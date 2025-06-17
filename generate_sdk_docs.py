@@ -330,13 +330,19 @@ def is_user_defined(method) -> bool:
     Check if a method is defined in the project's namespace, explicitly excluding Pydantic.
     """
     module_name = getattr(method, "__module__", "")
+    # Debug logging
+    print(f"Checking method: {method.__name__}, module: {module_name}")
+    
     # Explicitly exclude external libraries
     external_prefixes = ("pydantic", "pydantic_settings", "builtins", "typing")
 
     if any(module_name.startswith(prefix) for prefix in external_prefixes):
+        print(f"Excluding {method.__name__} due to external prefix")
         return False
     
-    return module_name.startswith(PROJECT_NAMESPACE)
+    result = module_name.startswith(PROJECT_NAMESPACE)
+    print(f"Method {method.__name__} is_user_defined: {result}")
+    return result
 
 def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
     """
@@ -350,10 +356,12 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
     """
     lines = ["Attributes:"]
 
+    # Determine fields to document (repr=True)
     kept_field_names = {
         name for name, field_info in cls.model_fields.items() if field_info.repr
     }
 
+    # Accumulate field descriptions from parent classes if missing
     field_docs = {}
     for base_cls in cls.__mro__:
         if not issubclass(base_cls, pydantic.BaseModel):
@@ -363,6 +371,7 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
                 if field_info.description:
                     field_docs[name] = field_info.description
 
+    # Get field descriptions and types, sorted alphabetically
     for field_name in sorted(kept_field_names):
         field_info = cls.model_fields[field_name]
         field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
@@ -377,23 +386,48 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
     methods_seen = set()
     method_lines = [""]
 
+    print(f"\nProcessing methods for class: {cls.__name__}")
     for base_cls in cls.__mro__:
         if base_cls is object:
             continue
-        for name, member in inspect.getmembers(base_cls, predicate=inspect.isfunction):
+        print(f"\nChecking base class: {base_cls.__name__}")
+        # Get methods directly from class __dict__
+        for name, member in base_cls.__dict__.items():
+            print(f"\nExamining member: {name}")
+            print(f"Member type: {type(member)}")
+            # Skip private methods and already seen methods
             if name.startswith("_") or name in methods_seen:
+                print(f"Skipping {name} - private or already seen")
                 continue
-            if is_user_defined(member):
+            # Handle classmethod and staticmethod
+            func = None
+            if inspect.isfunction(member):
+                print(f"{name} is a function")
+                func = member
+            elif isinstance(member, classmethod):
+                print(f"{name} is a classmethod")
+                func = member.__func__
+            elif isinstance(member, staticmethod):
+                print(f"{name} is a staticmethod")
+                func = member.__func__
+            if func is None:
+                print(f"No function found for {name}")
+                continue
+            print(f"Function module: {getattr(func, '__module__', '')}")
+            if is_user_defined(func):
+                print(f"Adding {name} to documentation")
                 methods_seen.add(name)
-                signature = inspect.signature(member)
-                docstring = inspect.getdoc(member) or "No description provided."
+                signature = inspect.signature(func)
+                docstring = inspect.getdoc(func) or "No description provided."
                 cleaned_docstring = inspect.cleandoc(docstring).splitlines()
 
-                # method_lines.append(f"- {name}{signature}: {cleaned_docstring[0]}")
                 method_lines.append(f"### <kbd>method</kbd> `{name}`")
-                method_lines.append(f"```python\n{name}{signature}\n```\n{cleaned_docstring[0]}")
+                method_lines.append(f"```python\n{name}{signature}\n```")
+                method_lines.append(f"{cleaned_docstring[0]}")
                 for extra_line in cleaned_docstring[1:]:
                     method_lines.append(f"    {extra_line}")
+            else:
+                print(f"Skipping {name} - not user defined")
 
     if len(method_lines) > 2:
         lines.extend(method_lines)
