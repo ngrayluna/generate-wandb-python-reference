@@ -354,7 +354,9 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
     Returns:
         str: A neatly formatted Google-style docstring.
     """
-    lines = ["Attributes:"]
+    # Get the class docstring
+    class_docstring = inspect.getdoc(cls) or "No description provided."
+    lines = [class_docstring, "", "Attributes:"]
 
     # Determine fields to document (repr=True)
     kept_field_names = {
@@ -376,6 +378,8 @@ def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
         field_info = cls.model_fields[field_name]
         field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
         description = inspect.cleandoc(field_docs.get(field_name, "No description provided."))
+        print(f"Processing field: {field_name}, type: {field_type}, description: {description}")
+        print("Description for field:", description)
         desc_lines = [line.strip() for line in description.splitlines() if line.strip()]
 
         lines.append(f"- {field_name} ({field_type}): {desc_lines[0]}")
