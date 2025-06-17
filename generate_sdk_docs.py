@@ -8,10 +8,12 @@ import importlib  # make sure this is at the top
 from inspect import isclass, isfunction, ismodule
 
 from lazydocs import MarkdownGenerator
-from typing import List
+from typing import List, Type
 
 from configuration import SOURCE 
-
+import pydantic
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 ###### USE LOCAL VERSION OF WANDB for debugging ######
 import sys
@@ -34,6 +36,7 @@ class DocodileMaker:
         self.module = module
         self.api_item = api
         self.output_dir = output_dir
+        self.ispydantic = False  # Flag to indicate if the object is a pydantic model
         self._object_attribute = None
         self._object_type = None
         self._file_path = None
@@ -69,6 +72,16 @@ class DocodileMaker:
     def _update_filename(self):
         """Determine the filename of the object."""
         self._filename = os.path.join(os.getcwd(), self.output_dir, self.api_item + ".md")  
+
+    def _check_pydantic(self):
+        """Check if the object is a Pydantic model."""
+        self.ispydantic = issubclass(self._object_attribute, BaseModel)
+
+    @property
+    def isPydantic(self):
+        """Check if the object is a Pydantic model."""
+        self._check_pydantic()
+        return self.ispydantic
 
     @property
     def object_attribute_value(self):
@@ -159,6 +172,275 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
 
+
+# def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
+#     """
+#     Generate a Google-style class docstring from Pydantic Field descriptions,
+#     properly handling multiline descriptions and selectively documenting fields
+#     based on their `repr` setting, sorted alphabetically.
+
+#     Args:
+#         cls (Type[BaseSettings]): The Pydantic Settings class to document.
+
+#     Returns:
+#         str: A formatted Google-style docstring with clean indentation.
+#     """
+#     lines = ["Attributes:"]
+
+#     # Determine fields to document (repr=True)
+#     kept_field_names = {
+#         name
+#         for name, field_info in cls.model_fields.items()
+#         if field_info.repr
+#     }
+
+#     # Accumulate descriptions from parent classes if missing
+#     field_docs = {}
+#     for base_cls in cls.__mro__:
+#         if not issubclass(base_cls, pydantic.BaseModel):
+#             continue
+
+#         for name, field_info in base_cls.model_fields.items():
+#             if name in kept_field_names and not field_docs.get(name):
+#                 description = field_info.description
+#                 if description:
+#                     field_docs[name] = description
+
+#     # Construct the docstring lines alphabetically
+#     for field_name in sorted(kept_field_names):
+#         field_info = cls.model_fields[field_name]
+#         field_type = field_info.annotation
+#         field_type_name = getattr(field_type, "__name__", str(field_type))
+
+#         description = field_docs.get(field_name, "No description provided.")
+#         cleaned_description = inspect.cleandoc(description)
+#         desc_lines = [line.strip() for line in cleaned_description.splitlines() if line.strip()]
+
+#         if desc_lines:
+#             lines.append(f"- {field_name} ({field_type_name}): {desc_lines[0]}")
+#             for extra_line in desc_lines[1:]:
+#                 lines.append(f"    {extra_line}")
+#         else:
+#             lines.append(f"- {field_name} ({field_type_name}): No description provided.")
+
+#     return "\n".join(lines)
+
+# import inspect
+# import sysconfig
+# import site
+# from typing import Type
+# from pydantic_settings import BaseSettings
+# import pydantic
+# import os
+
+
+# def is_user_defined(method) -> bool:
+#     """
+#     Determine if a method is user-defined by checking its source file path.
+#     """
+#     method_file = inspect.getsourcefile(method)
+#     if not method_file:
+#         return False
+
+#     method_file = os.path.abspath(method_file)
+#     site_packages_paths = site.getsitepackages()
+#     std_lib_path = sysconfig.get_paths()["stdlib"]
+
+#     # Exclude methods from standard library and site-packages
+#     if method_file.startswith(std_lib_path):
+#         return False
+#     if any(method_file.startswith(os.path.abspath(path)) for path in site_packages_paths):
+#         return False
+
+#     return True
+
+
+# def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
+#     """
+#     Generate a Google-style class docstring from Pydantic Field descriptions,
+#     selectively documenting user-defined inherited methods.
+
+#     Args:
+#         cls (Type[BaseSettings]): The Pydantic Settings class to document.
+
+#     Returns:
+#         str: A formatted Google-style docstring with attributes and user-defined methods.
+#     """
+#     lines = ["Attributes:"]
+
+#     # Determine fields to document (repr=True)
+#     kept_field_names = {
+#         name
+#         for name, field_info in cls.model_fields.items()
+#         if field_info.repr
+#     }
+
+#     # Accumulate field descriptions from inheritance hierarchy
+#     field_docs = {}
+#     for base_cls in cls.__mro__:
+#         if not issubclass(base_cls, pydantic.BaseModel):
+#             continue
+#         for name, field_info in base_cls.model_fields.items():
+#             if name in kept_field_names and name not in field_docs:
+#                 if field_info.description:
+#                     field_docs[name] = field_info.description
+
+#     # Document fields alphabetically
+#     for field_name in sorted(kept_field_names):
+#         field_info = cls.model_fields[field_name]
+#         field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
+#         description = inspect.cleandoc(field_docs.get(field_name, "No description provided."))
+#         desc_lines = [line.strip() for line in description.splitlines() if line.strip()]
+
+#         lines.append(f"- {field_name} ({field_type}): {desc_lines[0]}")
+#         for extra_line in desc_lines[1:]:
+#             lines.append(f"    {extra_line}")
+
+#     # Document user-defined methods only
+#     methods_seen = set()
+#     method_lines = ["", "Methods:"]
+
+#     for base_cls in cls.__mro__:
+#         if base_cls is object:
+#             continue
+#         for name, member in inspect.getmembers(base_cls, predicate=inspect.isfunction):
+#             if name.startswith("_") or name in methods_seen:
+#                 continue
+#             if is_user_defined(member):
+#                 methods_seen.add(name)
+#                 signature = inspect.signature(member)
+#                 docstring = inspect.getdoc(member) or "No description provided."
+#                 cleaned_docstring = inspect.cleandoc(docstring).splitlines()
+
+#                 method_lines.append(f"- {name}{signature}: {cleaned_docstring[0]}")
+#                 for extra_line in cleaned_docstring[1:]:
+#                     method_lines.append(f"    {extra_line}")
+
+#     # Append methods only if any user-defined methods were found
+#     if len(method_lines) > 2:
+#         lines.extend(method_lines)
+
+#     return "\n".join(lines)
+
+# Specify your project's namespace here
+PROJECT_NAMESPACE = "wandb.automations"
+
+def is_user_defined(method) -> bool:
+    """
+    Check if a method is defined in the project's namespace, explicitly excluding Pydantic.
+    """
+    module_name = getattr(method, "__module__", "")
+    # Debug logging
+    print(f"Checking method: {method.__name__}, module: {module_name}")
+    
+    # Explicitly exclude external libraries
+    external_prefixes = ("pydantic", "pydantic_settings", "builtins", "typing")
+
+    if any(module_name.startswith(prefix) for prefix in external_prefixes):
+        print(f"Excluding {method.__name__} due to external prefix")
+        return False
+    
+    result = module_name.startswith(PROJECT_NAMESPACE)
+    print(f"Method {method.__name__} is_user_defined: {result}")
+    return result
+
+def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
+    """
+    Generate a Google-style class docstring with fields and user-defined methods only.
+
+    Args:
+        cls (Type[BaseSettings]): The Pydantic Settings class to document.
+
+    Returns:
+        str: A neatly formatted Google-style docstring.
+    """
+    # Get the class docstring
+    class_docstring = inspect.getdoc(cls) or "No description provided."
+    lines = [class_docstring, "", "Attributes:"]
+
+    # Determine fields to document (repr=True)
+    kept_field_names = {
+        name for name, field_info in cls.model_fields.items() if field_info.repr
+    }
+
+    # Accumulate field descriptions from parent classes if missing
+    field_docs = {}
+    for base_cls in cls.__mro__:
+        if not issubclass(base_cls, pydantic.BaseModel):
+            continue
+        for name, field_info in base_cls.model_fields.items():
+            if name in kept_field_names and name not in field_docs:
+                if field_info.description:
+                    field_docs[name] = field_info.description
+
+    # Get field descriptions and types, sorted alphabetically
+    for field_name in sorted(kept_field_names):
+        field_info = cls.model_fields[field_name]
+        field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
+        description = inspect.cleandoc(field_docs.get(field_name, "No description provided."))
+        print(f"Processing field: {field_name}, type: {field_type}, description: {description}")
+        print("Description for field:", description)
+        desc_lines = [line.strip() for line in description.splitlines() if line.strip()]
+
+        lines.append(f"- {field_name} ({field_type}): {desc_lines[0]}")
+        for extra_line in desc_lines[1:]:
+            lines.append(f"    {extra_line}")
+
+    # Document explicitly user-defined methods
+    methods_seen = set()
+    method_lines = [""]
+
+    print(f"\nProcessing methods for class: {cls.__name__}")
+    for base_cls in cls.__mro__:
+        if base_cls is object:
+            continue
+        print(f"\nChecking base class: {base_cls.__name__}")
+        # Get methods directly from class __dict__
+        for name, member in base_cls.__dict__.items():
+            print(f"\nExamining member: {name}")
+            print(f"Member type: {type(member)}")
+            # Skip private methods and already seen methods
+            if name.startswith("_") or name in methods_seen:
+                print(f"Skipping {name} - private or already seen")
+                continue
+            # Handle classmethod and staticmethod
+            func = None
+            if inspect.isfunction(member):
+                print(f"{name} is a function")
+                func = member
+            elif isinstance(member, classmethod):
+                print(f"{name} is a classmethod")
+                func = member.__func__
+            elif isinstance(member, staticmethod):
+                print(f"{name} is a staticmethod")
+                func = member.__func__
+            if func is None:
+                print(f"No function found for {name}")
+                continue
+            print(f"Function module: {getattr(func, '__module__', '')}")
+            if is_user_defined(func):
+                print(f"Adding {name} to documentation")
+                methods_seen.add(name)
+                signature = inspect.signature(func)
+                docstring = inspect.getdoc(func) or "No description provided."
+                cleaned_docstring = inspect.cleandoc(docstring).splitlines()
+
+                method_lines.append(f"### <kbd>method</kbd> `{name}`")
+                method_lines.append(f"```python\n{name}{signature}\n```")
+                method_lines.append(f"{cleaned_docstring[0]}")
+                for extra_line in cleaned_docstring[1:]:
+                    method_lines.append(f"    {extra_line}")
+            else:
+                print(f"Skipping {name} - not user defined")
+
+    if len(method_lines) > 2:
+        lines.extend(method_lines)
+
+    return "\n".join(lines)
+
+
+
+
 def create_markdown(docodile, generator):
     """Create markdown file for the API.
     
@@ -174,9 +456,13 @@ def create_markdown(docodile, generator):
         file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
 
-        if docodile.object_type == "class":
+        if docodile.object_type == "class" and docodile.isPydantic:
+            print("Creating Pydantic class markdown", "\n\n")
+            print(f"Generating docstring for Pydantic class: {docodile.api_item}")
+            file.write(generate_Pydantic_docstring(docodile.object_attribute_value))
+        elif docodile.object_type == "class" and not docodile.isPydantic:
             print("Creating class markdown", "\n\n")
-            file.write(generator.class2md(docodile.object_attribute_value))
+            file.write(generator.class2md(docodile.object_attribute_value))        
         elif docodile.object_type == "function":
             print("Creating function markdown", "\n\n")
             file.write(generator.func2md(docodile.object_attribute_value))
