@@ -68,6 +68,6 @@ def collect_all_api_entries(input_dir, output_file):
             f.write(entry + '\n')
 
 # Example usage:
-input_markdown_dir = "python-library/"            # Set this to your markdown folder
+input_markdown_dir = "python/"            # Set this to your markdown folder
 output_api_list_file = "all_apis.txt"   # The result file
 collect_all_api_entries(input_markdown_dir, output_api_list_file)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TEMP_DIR=wandb_sdk_docs
-DESTINATION_DIR=python-library
+DESTINATION_DIR=python
 
 # Check if the directory exists, if it does, remove it else create it
 if [ -d "$TEMP_DIR" ]; then

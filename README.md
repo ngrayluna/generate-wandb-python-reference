@@ -56,7 +56,7 @@ The entrypoint for generating the W&B Python SDK docs is the `generate-wandb-pyt
 bash create_wandb_sdk_docs.sh
 ```
 
-The output will be generated in the `wandb/wandb/docs/python-library` directory. The generated markdown files will be organized into subdirectories based on the `object_type` specified in the front matter of each markdown file.
+The output will be generated in the `wandb/wandb/docs/python` directory. The generated markdown files will be organized into subdirectories based on the `object_type` specified in the front matter of each markdown file.
 
 ## Overview of the scripts
 The script does the following, in this order:
@@ -89,7 +89,7 @@ If no, then:
             "title": "", # Title of the folder (What appears in the left navigation)
             "description": "", # Description of the top most _index.md file
             "frontmatter": "object_type: ", # frontmatter, used for sorting
-            "folder_name": "", # Desired directory within python-library E.g. python-library/launch-library, python-library/data-type/
+            "folder_name": "", # Desired directory within python E.g. python/launch-library, python/data-type/
         }
     }
    ```
