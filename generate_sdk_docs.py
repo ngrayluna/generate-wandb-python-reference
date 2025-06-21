@@ -157,7 +157,7 @@ def _github_button(href_links):
     return "{{< cta-button githubLink=" + href_links + " >}}"+ "\n\n"
 
 
-def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob/main/wandb"):
+def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob/main/"):
     """Add GitHub button to the markdown file.
     
     Args:

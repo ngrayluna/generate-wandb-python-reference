@@ -29,7 +29,7 @@ def create_markdown_index_page(root_directory):
 
     for dirpath, dirnames, filenames in os.walk(root_directory):       
         
-        # Handle top-most index separately (ref/python-library/_index.md)
+        # Handle top-most index separately (ref/python/_index.md)
         if dirpath == root_directory:
             create_python_index_file(dirpath, page_content)
             continue
@@ -55,7 +55,6 @@ def create_markdown_index_page(root_directory):
                 file.write(f"---\ntitle: {title}\n")
                 file.write(f"module: {module_name}\n")
                 file.write(f"weight: {weight}\n")
-                file.write("no_list: true\n")
                 file.write("---\n")
                 file.write(f"{description}\n")
 
@@ -80,7 +79,7 @@ def create_python_sdk_index_file(filepath,dir_name, page_content):
 
 
 def create_python_index_file(filepath, page_content):
-    """Create an _index.md file for the top-level python-library folder."""
+    """Create an _index.md file for the top-level python folder."""
 
     index_file = os.path.join(filepath, "_index.md")
     title = "Python Reference"
@@ -89,7 +88,7 @@ def create_python_index_file(filepath, page_content):
     card_blocks = []
     for folder, data in page_content.items():
         if "sdk" not in data['module'] and data['title'] != "Actions":
-            url = f"/ref/python-library/{folder}"
+            url = f"/ref/python/{folder}"
             card = f"""    {{{{< card >}}}}
             <a href="{url}">
             <h2 className="card-title">{data['title']}</h2></a>
@@ -101,7 +100,7 @@ def create_python_index_file(filepath, page_content):
             # Skip SDK modules for the top-level index
             continue
 
-    url = f"/ref/python-library/sdk"   
+    url = f"/ref/python/sdk"   
     manual_card = f"""    {{{{< card >}}}}
         <a href="{url}">
         <h2 className="card-title">Python SDK</h2></a>
@@ -131,6 +130,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--source_directory", default="python-library", help="Directory where the markdown files exist")
+    parser.add_argument("--source_directory", default="python", help="Directory where the markdown files exist")
     args = parser.parse_args()
     main(args)

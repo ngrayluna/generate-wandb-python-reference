@@ -201,7 +201,7 @@ def main(args):
     # Step 2: Sort markdown files based on frontmatter
     # Returns a set of directories created
     directories_created = sort_markdown_files(source_directory, source_copy)
-    # Returns: {'python-library/sdk/data-type', 'python-library/automations', 'python-library/sdk/actions', ...}
+    # Returns: {'python/sdk/data-type', 'python/automations', 'python/sdk/actions', ...}
 
     # Grab whatever the directory "action" APIs are in
     search_dir = source_copy["SDK"]["hugo_specs"]["folder_name"]  # "actions"
@@ -222,6 +222,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--source_directory", default="wandb_sdk_docs", help="Directory where markdown files exist")
-    parser.add_argument("--destination_directory", default="python-library", help="Root directory for processed files")
+    parser.add_argument("--destination_directory", default="python", help="Root directory for processed files")
     args = parser.parse_args()
     main(args)
