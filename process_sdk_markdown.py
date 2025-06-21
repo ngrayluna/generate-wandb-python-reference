@@ -40,6 +40,10 @@ class MarkdownCleaner:
             r"### <kbd>method</kbd> `.*?__init__.*?`\n\n```python\n.*?\n```\n\n.*?(?=\n## |\n### |\Z)"
         )
 
+        self.classmethod_pattern = re.compile(
+            r"(?s)### <kbd>classmethod</kbd> `.*?`\n\n```python\n.*?\n```\n\n.*?(?=\n## |\n### |\Z)"
+        )        
+
     def clean_text(self, markdown_text: str) -> str:
         cleaned_text = markdown_text
         for pattern, replacement in self.patterns:
@@ -56,6 +60,10 @@ class MarkdownCleaner:
         cleaned_text = self.remove_ignored_blocks(
             cleaned_text, "<!-- lazydoc-ignore-function: internal -->", self.function_pattern
         )
+
+        cleaned_text = self.remove_ignored_blocks(
+            cleaned_text, "<!-- lazydoc-ignore-classmethod: internal -->", self.classmethod_pattern
+)
 
         cleaned_text = self.init_pattern.sub("", cleaned_text)
 
