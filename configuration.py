@@ -32,7 +32,7 @@ SOURCE = {
             "title": "Data Types",
             "description": "Defines Data Types for logging interactive visualizations to W&B.",
             "frontmatter": "object_type: python_sdk_data_type",
-            "folder_name": "data-type",
+            "folder_name": "data-types",
             "weight": 2,
         },
     },    
