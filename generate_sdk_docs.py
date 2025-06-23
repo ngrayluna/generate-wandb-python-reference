@@ -31,6 +31,12 @@ import wandb
 print("Using wandb from:", wandb.__file__)
 ###### END ######
 
+
+# Temporary flag to hide launch APIs
+# This is used to hide the launch APIs from the public API documentation.
+hide_launch_apis = True
+
+
 class DocodileMaker:
     def __init__(self, module, api, output_dir, SOURCE):
         self.module = module
@@ -482,7 +488,7 @@ def check_temp_dir(temp_output_dir):
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
 
-def get_public_apis_from_init(file_path: str) -> List[str]:
+def get_public_apis_from_init(file_path: str, hide_launch_apis: bool) -> List[str]:
     """Extracts module names from an __init__.py file in the wandb.apis.public namespace.
     
     Args:
@@ -499,6 +505,10 @@ def get_public_apis_from_init(file_path: str) -> List[str]:
             match = pattern.match(line)
             if match:
                 modules.add(match.group(1))
+
+    if hide_launch_apis:
+        modules.remove("jobs")
+        modules.remove("query_generator")
 
     # Convert to sorted list and append ".md" to each module name
     return sorted(modules)
@@ -587,7 +597,7 @@ def main(args):
 
     ## Temporary ##
     # To do: Remove this method of extracting public APIs from the __init__.py file.
-    import_export_api_list = get_public_apis_from_init(local_wandb_path / "wandb" / "apis" / "public" / "__init__.py")
+    import_export_api_list = get_public_apis_from_init(local_wandb_path / "wandb" / "apis" / "public" / "__init__.py", hide_launch_apis)
     SOURCE_DICT_COPY["PUBLIC_API"]["apis_found"] = import_export_api_list
     ## End Temporary ##
 
