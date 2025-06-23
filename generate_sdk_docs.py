@@ -34,8 +34,7 @@ print("Using wandb from:", wandb.__file__)
 
 # Temporary flag to hide launch APIs
 # This is used to hide the launch APIs from the public API documentation.
-hide_launch_apis = True
-
+HIDE_LAUNCH_APIS = True
 
 class DocodileMaker:
     def __init__(self, module, api, output_dir, SOURCE):
@@ -178,157 +177,7 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
 
-
-# def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
-#     """
-#     Generate a Google-style class docstring from Pydantic Field descriptions,
-#     properly handling multiline descriptions and selectively documenting fields
-#     based on their `repr` setting, sorted alphabetically.
-
-#     Args:
-#         cls (Type[BaseSettings]): The Pydantic Settings class to document.
-
-#     Returns:
-#         str: A formatted Google-style docstring with clean indentation.
-#     """
-#     lines = ["Attributes:"]
-
-#     # Determine fields to document (repr=True)
-#     kept_field_names = {
-#         name
-#         for name, field_info in cls.model_fields.items()
-#         if field_info.repr
-#     }
-
-#     # Accumulate descriptions from parent classes if missing
-#     field_docs = {}
-#     for base_cls in cls.__mro__:
-#         if not issubclass(base_cls, pydantic.BaseModel):
-#             continue
-
-#         for name, field_info in base_cls.model_fields.items():
-#             if name in kept_field_names and not field_docs.get(name):
-#                 description = field_info.description
-#                 if description:
-#                     field_docs[name] = description
-
-#     # Construct the docstring lines alphabetically
-#     for field_name in sorted(kept_field_names):
-#         field_info = cls.model_fields[field_name]
-#         field_type = field_info.annotation
-#         field_type_name = getattr(field_type, "__name__", str(field_type))
-
-#         description = field_docs.get(field_name, "No description provided.")
-#         cleaned_description = inspect.cleandoc(description)
-#         desc_lines = [line.strip() for line in cleaned_description.splitlines() if line.strip()]
-
-#         if desc_lines:
-#             lines.append(f"- {field_name} ({field_type_name}): {desc_lines[0]}")
-#             for extra_line in desc_lines[1:]:
-#                 lines.append(f"    {extra_line}")
-#         else:
-#             lines.append(f"- {field_name} ({field_type_name}): No description provided.")
-
-#     return "\n".join(lines)
-
-# import inspect
-# import sysconfig
-# import site
-# from typing import Type
-# from pydantic_settings import BaseSettings
-# import pydantic
-# import os
-
-
-# def is_user_defined(method) -> bool:
-#     """
-#     Determine if a method is user-defined by checking its source file path.
-#     """
-#     method_file = inspect.getsourcefile(method)
-#     if not method_file:
-#         return False
-
-#     method_file = os.path.abspath(method_file)
-#     site_packages_paths = site.getsitepackages()
-#     std_lib_path = sysconfig.get_paths()["stdlib"]
-
-#     # Exclude methods from standard library and site-packages
-#     if method_file.startswith(std_lib_path):
-#         return False
-#     if any(method_file.startswith(os.path.abspath(path)) for path in site_packages_paths):
-#         return False
-
-#     return True
-
-
-# def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
-#     """
-#     Generate a Google-style class docstring from Pydantic Field descriptions,
-#     selectively documenting user-defined inherited methods.
-
-#     Args:
-#         cls (Type[BaseSettings]): The Pydantic Settings class to document.
-
-#     Returns:
-#         str: A formatted Google-style docstring with attributes and user-defined methods.
-#     """
-#     lines = ["Attributes:"]
-
-#     # Determine fields to document (repr=True)
-#     kept_field_names = {
-#         name
-#         for name, field_info in cls.model_fields.items()
-#         if field_info.repr
-#     }
-
-#     # Accumulate field descriptions from inheritance hierarchy
-#     field_docs = {}
-#     for base_cls in cls.__mro__:
-#         if not issubclass(base_cls, pydantic.BaseModel):
-#             continue
-#         for name, field_info in base_cls.model_fields.items():
-#             if name in kept_field_names and name not in field_docs:
-#                 if field_info.description:
-#                     field_docs[name] = field_info.description
-
-#     # Document fields alphabetically
-#     for field_name in sorted(kept_field_names):
-#         field_info = cls.model_fields[field_name]
-#         field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
-#         description = inspect.cleandoc(field_docs.get(field_name, "No description provided."))
-#         desc_lines = [line.strip() for line in description.splitlines() if line.strip()]
-
-#         lines.append(f"- {field_name} ({field_type}): {desc_lines[0]}")
-#         for extra_line in desc_lines[1:]:
-#             lines.append(f"    {extra_line}")
-
-#     # Document user-defined methods only
-#     methods_seen = set()
-#     method_lines = ["", "Methods:"]
-
-#     for base_cls in cls.__mro__:
-#         if base_cls is object:
-#             continue
-#         for name, member in inspect.getmembers(base_cls, predicate=inspect.isfunction):
-#             if name.startswith("_") or name in methods_seen:
-#                 continue
-#             if is_user_defined(member):
-#                 methods_seen.add(name)
-#                 signature = inspect.signature(member)
-#                 docstring = inspect.getdoc(member) or "No description provided."
-#                 cleaned_docstring = inspect.cleandoc(docstring).splitlines()
-
-#                 method_lines.append(f"- {name}{signature}: {cleaned_docstring[0]}")
-#                 for extra_line in cleaned_docstring[1:]:
-#                     method_lines.append(f"    {extra_line}")
-
-#     # Append methods only if any user-defined methods were found
-#     if len(method_lines) > 2:
-#         lines.extend(method_lines)
-
-#     return "\n".join(lines)
-
-# Specify your project's namespace here
+## TO DO: Make namepsace agnostic.
 PROJECT_NAMESPACE = "wandb.automations"
 
 def is_user_defined(method) -> bool:
@@ -488,7 +337,7 @@ def check_temp_dir(temp_output_dir):
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
 
-def get_public_apis_from_init(file_path: str, hide_launch_apis: bool) -> List[str]:
+def get_public_apis_from_init(file_path: str) -> List[str]:
     """Extracts module names from an __init__.py file in the wandb.apis.public namespace.
     
     Args:
@@ -506,7 +355,7 @@ def get_public_apis_from_init(file_path: str, hide_launch_apis: bool) -> List[st
             if match:
                 modules.add(match.group(1))
 
-    if hide_launch_apis:
+    if HIDE_LAUNCH_APIS:
         modules.remove("jobs")
         modules.remove("query_generator")
 
@@ -597,7 +446,7 @@ def main(args):
 
     ## Temporary ##
     # To do: Remove this method of extracting public APIs from the __init__.py file.
-    import_export_api_list = get_public_apis_from_init(local_wandb_path / "wandb" / "apis" / "public" / "__init__.py", hide_launch_apis)
+    import_export_api_list = get_public_apis_from_init(local_wandb_path / "wandb" / "apis" / "public" / "__init__.py")
     SOURCE_DICT_COPY["PUBLIC_API"]["apis_found"] = import_export_api_list
     ## End Temporary ##
 
