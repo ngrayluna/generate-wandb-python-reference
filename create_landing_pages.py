@@ -69,7 +69,7 @@ def create_python_sdk_index_file(filepath,dir_name, page_content):
     weight = page_content.get(dir_name, {}).get("weight", 0) 
 
     with open(filepath, 'w') as file:
-        file.write(f"---\ntitle: {title.upper()} v({wandb.__version__})\n")
+        file.write(f"---\ntitle: {title.upper()}\n")
         file.write(f"module: {module_name}\n")
         file.write(f"weight: {weight}\n")
         file.write("no_list: true\n")
@@ -82,7 +82,7 @@ def create_python_index_file(filepath, page_content):
     """Create an _index.md file for the top-level python folder."""
 
     index_file = os.path.join(filepath, "_index.md")
-    title = "Python Reference"
+    title = f"Python Reference v({wandb.__version__})"
 
     # Generate cards dynamically from page_content
     card_blocks = []
