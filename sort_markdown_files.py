@@ -22,7 +22,10 @@ def build_local_paths(root_directory):
     for key, config in SOURCE_COPY.items():
         folder_name = config["hugo_specs"]["folder_name"]
         
-        if key in ["SDK", "DATATYPE", "LAUNCH_API"]:
+        if key == "SDK":
+            # Place SDK files directly in the sdk directory, not in a subdirectory
+            local_path = sdk_dir
+        elif key in ["DATATYPE", "CUSTOMCHARTS", "LAUNCH_API"]:
             # Place module in SDK Directory
             local_path = os.path.join(sdk_dir, folder_name)
         else:
@@ -69,9 +72,9 @@ def sort_markdown_files(source_directory, source_copy):
 
     # Create dictionary where the keys are object_type values from frontmatter
     # and the values are the corresponding keys in the SOURCE dictionary
-    object_type_to_key = create_object_type_lookup(source_copy)
     # Returns something lke:
     # {'api': 'SDK', 'data-type': 'DATATYPE', 'public_apis_namespace': 'PUBLIC_API', 'launch_apis_namespace': 'LAUNCH_API'}
+    object_type_to_key = create_object_type_lookup(source_copy)
 
     # Create a set to keep track of directories created
     directories_created = []
@@ -122,45 +125,6 @@ def read_markdown_metadata(filepath):
 
     return frontmatter
 
-
-# def sort_global_functions(global_module_path, filepath):
-#     """Find global functions in the source_copy and move them into their own directory."""
-
-#     # Get values listed in module.py
-#     extracted = extract_set_global_params(global_module_path)
-#     #print(f"Extracted global functions: {extracted}")
-#     # ['run', 'config', 'log', 'summary', 'save', 'use_artifact', 'log_artifact', ...]
-
-#     # Create a new directory for global/legacy functions
-#     global_functions_dir = os.path.join(os.getcwd(), filepath, "Legacy_functions")
-#     os.makedirs(global_functions_dir, exist_ok=True)
-
-#     # Move the global functions into the new directory
-#     for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
-#         #print(f"Checking {filepath} for global functions")
-#         frontmatter = read_markdown_metadata(filepath)
-
-#         title = frontmatter.get("title").split("()")[0]
-#         if not title:
-#             print(f"Skipping {filepath}: No title in frontmatter.")
-
-#         # Check if the title is in the extracted list
-#         if title in extracted:
-#             shutil.move(filepath, global_functions_dir)
-
-#     return
-
-
-# def extract_set_global_params(file_path):
-#     with open(file_path, "r") as f:
-#         tree = ast.parse(f.read(), filename=file_path)
-
-#     for node in tree.body:
-#         if isinstance(node, ast.FunctionDef) and node.name == "set_global":
-#             return [arg.arg for arg in node.args.args]
-
-#     return []
-
 def sort_functions_and_classes(filepath):
     """Sort functions and classes into their own directories."""
     # Create a new directory for functions and classes
@@ -197,24 +161,23 @@ def main(args):
 
     # Step 2: Sort markdown files based on frontmatter
     # Returns a set of directories created
-    directories_created = sort_markdown_files(source_directory, source_copy)
     # Returns: {'python/sdk/data-type', 'python/automations', 'python/sdk/actions', ...}
+    directories_created = sort_markdown_files(source_directory, source_copy)
 
     # Grab whatever the directory "action" APIs are in
-    search_dir = source_copy["SDK"]["hugo_specs"]["folder_name"]  # "actions"
+    # Since SDK files are now placed directly in the sdk directory, look for that
+    sdk_path = source_copy["SDK"]["hugo_specs"]["local_path"]
     
+    # Find the sdk directory in the created directories
+    global_fun_root_path = None
     for partial_path in directories_created:
-        if os.path.split(partial_path)[-1] == search_dir:
+        if partial_path == sdk_path:
             global_fun_root_path = partial_path
             break
     print(f"Found global_dir_root: {global_fun_root_path}")
 
-    # Step 3: Sort global functions into their own directory
-    #sort_global_functions(global_module_path, global_fun_root_path)
-
-    # Step 4: Sort functions and classes into their own directories
+    # Step 3: Sort functions and classes into their own directories
     sort_functions_and_classes(global_fun_root_path)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
