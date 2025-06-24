@@ -122,47 +122,44 @@ def read_markdown_metadata(filepath):
 
     return frontmatter
 
-## TO DO 
-# def get_source_key_from_frontmatter(object_type, source_copy):
+
+# def sort_global_functions(global_module_path, filepath):
+#     """Find global functions in the source_copy and move them into their own directory."""
+
+#     # Get values listed in module.py
+#     extracted = extract_set_global_params(global_module_path)
+#     #print(f"Extracted global functions: {extracted}")
+#     # ['run', 'config', 'log', 'summary', 'save', 'use_artifact', 'log_artifact', ...]
+
+#     # Create a new directory for global/legacy functions
+#     global_functions_dir = os.path.join(os.getcwd(), filepath, "Legacy_functions")
+#     os.makedirs(global_functions_dir, exist_ok=True)
+
+#     # Move the global functions into the new directory
+#     for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
+#         #print(f"Checking {filepath} for global functions")
+#         frontmatter = read_markdown_metadata(filepath)
+
+#         title = frontmatter.get("title").split("()")[0]
+#         if not title:
+#             print(f"Skipping {filepath}: No title in frontmatter.")
+
+#         # Check if the title is in the extracted list
+#         if title in extracted:
+#             shutil.move(filepath, global_functions_dir)
+
 #     return
 
-def sort_global_functions(global_module_path, filepath):
-    """Find global functions in the source_copy and move them into their own directory."""
 
-    # Get values listed in module.py
-    extracted = extract_set_global_params(global_module_path)
-    #print(f"Extracted global functions: {extracted}")
-    # ['run', 'config', 'log', 'summary', 'save', 'use_artifact', 'log_artifact', ...]
+# def extract_set_global_params(file_path):
+#     with open(file_path, "r") as f:
+#         tree = ast.parse(f.read(), filename=file_path)
 
-    # Create a new directory for global/legacy functions
-    global_functions_dir = os.path.join(os.getcwd(), filepath, "Legacy_functions")
-    os.makedirs(global_functions_dir, exist_ok=True)
+#     for node in tree.body:
+#         if isinstance(node, ast.FunctionDef) and node.name == "set_global":
+#             return [arg.arg for arg in node.args.args]
 
-    # Move the global functions into the new directory
-    for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
-        #print(f"Checking {filepath} for global functions")
-        frontmatter = read_markdown_metadata(filepath)
-
-        title = frontmatter.get("title").split("()")[0]
-        if not title:
-            print(f"Skipping {filepath}: No title in frontmatter.")
-
-        # Check if the title is in the extracted list
-        if title in extracted:
-            shutil.move(filepath, global_functions_dir)
-
-    return
-
-
-def extract_set_global_params(file_path):
-    with open(file_path, "r") as f:
-        tree = ast.parse(f.read(), filename=file_path)
-
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef) and node.name == "set_global":
-            return [arg.arg for arg in node.args.args]
-
-    return []
+#     return []
 
 def sort_functions_and_classes(filepath):
     """Sort functions and classes into their own directories."""
@@ -213,7 +210,7 @@ def main(args):
     print(f"Found global_dir_root: {global_fun_root_path}")
 
     # Step 3: Sort global functions into their own directory
-    sort_global_functions(global_module_path, global_fun_root_path)
+    #sort_global_functions(global_module_path, global_fun_root_path)
 
     # Step 4: Sort functions and classes into their own directories
     sort_functions_and_classes(global_fun_root_path)
