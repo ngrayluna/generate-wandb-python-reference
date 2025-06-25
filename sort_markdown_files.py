@@ -128,8 +128,8 @@ def read_markdown_metadata(filepath):
 def sort_functions_and_classes(filepath):
     """Sort functions and classes into their own directories."""
     # Create a new directory for functions and classes
-    functions_dir = os.path.join(os.getcwd(), filepath, "Functions")
-    classes_dir = os.path.join(os.getcwd(), filepath, "Classes")
+    functions_dir = os.path.join(os.getcwd(), filepath, "functions")
+    classes_dir = os.path.join(os.getcwd(), filepath, "classes")
     os.makedirs(functions_dir, exist_ok=True)
     os.makedirs(classes_dir, exist_ok=True)
 

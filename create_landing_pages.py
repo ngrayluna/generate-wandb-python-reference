@@ -42,11 +42,16 @@ def create_markdown_index_page(root_directory):
         title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").replace("_", " ").title())
         description = page_content.get(dir_name, {}).get("description", "")
         module_name = page_content.get(dir_name, {}).get("module", "")
-        weight = page_content.get(dir_name, {}).get("weight", 0)
+        
+        if title == "Classes":
+            weight = 30
+        elif title == "Functions":
+            weight = 20
+        else:
+            weight = page_content.get(dir_name, {}).get("weight", 0)
 
         index_file = os.path.join(dirpath, "_index.md")
         # Check if the directory name contains "sdk" and adjust the title accordingly
-        # This is a workaround for the SDK module
         if "sdk" in dir_name:
             create_python_sdk_index_file(index_file, dir_name,  page_content)
         else:
@@ -66,7 +71,7 @@ def create_python_sdk_index_file(filepath,dir_name, page_content):
 
     title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").title())
     module_name = page_content.get(dir_name, {}).get("module", "")
-    weight = page_content.get(dir_name, {}).get("weight", 0) 
+    weight = page_content.get(dir_name, {}).get("weight", 10) 
 
     with open(filepath, 'w') as file:
         file.write(f"---\ntitle: {title.upper()}\n")
@@ -82,7 +87,7 @@ def create_python_index_file(filepath, page_content):
     """Create an _index.md file for the top-level python folder."""
 
     index_file = os.path.join(filepath, "_index.md")
-    title = f"Python Reference v({wandb.__version__})"
+    title = f"Python SDK v({wandb.__version__})"
 
     # Generate cards dynamically from page_content
     card_blocks = []
@@ -103,7 +108,7 @@ def create_python_index_file(filepath, page_content):
     url = f"/ref/python/sdk"   
     manual_card = f"""    {{{{< card >}}}}
         <a href="{url}">
-        <h2 className="card-title">Python SDK</h2></a>
+        <h2 className="card-title">Python Reference</h2></a>
         <p className="card-content">Train and fine-tune models, manage models from experimentation to production.</p>
     
     {{{{< /card >}}}}"""
