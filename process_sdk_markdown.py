@@ -49,18 +49,22 @@ class MarkdownCleaner:
         for pattern, replacement in self.patterns:
             cleaned_text = pattern.sub(replacement, cleaned_text)
 
+        # Remove ignored blocks based on custom comments (__init__)
         cleaned_text = self.remove_ignored_blocks(
             cleaned_text, "<!-- lazydoc-ignore: internal -->", self.block_pattern
         )
 
+        # Remove ignored blocks for classes
         cleaned_text = self.remove_ignored_blocks(
             cleaned_text, "<!-- lazydoc-ignore-class: internal -->", self.class_pattern
         )
 
+        # Remove ignored blocks for functions
         cleaned_text = self.remove_ignored_blocks(
             cleaned_text, "<!-- lazydoc-ignore-function: internal -->", self.function_pattern
         )
 
+        # Remove ignored blocks for @classmethods
         cleaned_text = self.remove_ignored_blocks(
             cleaned_text, "<!-- lazydoc-ignore-classmethod: internal -->", self.classmethod_pattern
 )

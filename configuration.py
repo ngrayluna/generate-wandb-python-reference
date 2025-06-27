@@ -40,7 +40,7 @@ SOURCE = {
         "module": "wandb.apis.public",
         "file_path": BASE_DIR / "wandb" / "wandb" / "apis" / "public" / "__init__.py",
         "hugo_specs": {
-            "title": "Analytics and Query API",
+            "title": "Query API",
             "description": "Query and analyze data logged to W&B.",
             "frontmatter": "object_type: public_apis_namespace",
             "folder_name": "public-api",
