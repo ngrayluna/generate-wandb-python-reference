@@ -11,7 +11,7 @@ SOURCE = {
             "description": "Use during training to log experiments, track metrics, and save model artifacts.",
             "frontmatter": "object_type: python_sdk_actions",
             "folder_name": "actions",
-            "weight": 1,
+            "weight": 10,
         },
     },
     "CUSTOMCHARTS": {
@@ -22,7 +22,7 @@ SOURCE = {
             "description": "Create custom charts and visualizations.",
             "frontmatter": "object_type: python_sdk_custom_charts",
             "folder_name": "custom-charts",
-            "weight": 1,
+            "weight": 80,
         },
     },    
     "DATATYPE": {
@@ -33,18 +33,18 @@ SOURCE = {
             "description": "Defines Data Types for logging interactive visualizations to W&B.",
             "frontmatter": "object_type: python_sdk_data_type",
             "folder_name": "data-types",
-            "weight": 2,
+            "weight": 70,
         },
     },    
     "PUBLIC_API": {
         "module": "wandb.apis.public",
         "file_path": BASE_DIR / "wandb" / "wandb" / "apis" / "public" / "__init__.py",
         "hugo_specs": {
-            "title": "Analytics and Query API",
+            "title": "Query API",
             "description": "Query and analyze data logged to W&B.",
             "frontmatter": "object_type: public_apis_namespace",
             "folder_name": "public-api",
-            "weight": 3,
+            "weight": 90,
         },
     },
     "AUTOMATIONS": {
@@ -54,7 +54,8 @@ SOURCE = {
             "title": "Automations",
             "description": "Automate your W&B workflows.",
             "frontmatter": "object_type: automations_namespace",
-            "folder_name": "automations"
+            "folder_name": "automations",
+            "weight": 100,
         },
     },
 }
