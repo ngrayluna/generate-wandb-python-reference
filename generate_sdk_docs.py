@@ -29,6 +29,7 @@ sys.path.insert(0, str(local_wandb_path))
 # Confirm the correct version of wandb is being used
 import wandb
 print("Using wandb from:", wandb.__file__)
+print("Wandb version:", wandb.__version__)
 ###### END ######
 
 
