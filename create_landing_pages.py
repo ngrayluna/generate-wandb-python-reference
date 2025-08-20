@@ -87,7 +87,7 @@ def create_python_index_file(filepath, page_content):
     """Create an _index.md file for the top-level python folder."""
 
     index_file = os.path.join(filepath, "_index.md")
-    title = f"Python Library v({wandb.__version__})"
+    title = f"Python Library v{wandb.__version__}"
 
     # Generate cards dynamically from page_content
     card_blocks = []
