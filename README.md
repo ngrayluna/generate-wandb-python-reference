@@ -132,7 +132,7 @@ Why does this exist?
 - `/wandb_sdk_docs/` - Temporary directory for initial lazydocs output
 - `/python/` - Final organized documentation with subdirectories:
   - `/sdk/` - Core SDK functions and classes
-  - `/public-api/` - Query API documentation
+  - `/public-api/` - Public API documentation
   - `/automations/` - Automation features
   - `/data-types/` - Data type definitions
   - `/custom-charts/` - Chart visualization tools
