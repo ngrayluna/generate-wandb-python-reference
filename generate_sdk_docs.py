@@ -4,7 +4,7 @@ import os
 import re
 import inspect
 import argparse
-import importlib  # make sure this is at the top
+import importlib
 from inspect import isclass, isfunction, ismodule
 
 from lazydocs import MarkdownGenerator
@@ -140,13 +140,15 @@ def _type_key_string(docodile):
     # Check for specific class names for top-level SDK items
     file_path = docodile.getfile_path
     api_item = docodile.api_item if hasattr(docodile, 'api_item') else ""
+    object_type = docodile.object_type if hasattr(docodile, 'object_type') else ""
     
-    # Check for specific Artifact, Run, Settings classes
-    if "artifact" in file_path.lower() and ("Artifact" in api_item or "artifact.py" in file_path):
+    # Check for specific Artifact, Run, Settings classes - must be classes, not functions
+    if "artifact" in file_path.lower() and ("Artifact" in api_item or "artifact.py" in file_path) and object_type == "class":
         return SOURCE["ARTIFACT"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "wandb_run" in file_path or ("Run" in api_item and "sdk" in file_path):
+    elif api_item == "Run" and object_type == "class":
+        # Only the Run class itself should go to RUN, not functions from wandb_run.py
         return SOURCE["RUN"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "wandb_settings" in file_path or ("Settings" in api_item and "sdk" in file_path):
+    elif "wandb_settings" in file_path and api_item == "Settings" and object_type == "class":
         return SOURCE["SETTINGS"]["hugo_specs"]["frontmatter"] + "\n"
     # Check for Reports and Workspaces
     elif "wandb_workspaces" in file_path and "reports" in file_path:
