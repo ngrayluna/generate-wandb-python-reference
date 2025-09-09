@@ -131,43 +131,54 @@ def _title_key_string(docodile):
     else:
         return f"title: {base_name}\n"
 
+# Type determination rules - cleaner approach using a list of rules
+# Each rule is a tuple of (matcher_function, source_key)
+TYPE_DETERMINATION_RULES = [
+    # Specific class checks (must be classes, not functions)
+    (lambda d: d.api_item == "Run" and d.object_type == "class", "RUN"),
+    (lambda d: d.api_item == "Settings" and d.object_type == "class" and "wandb_settings" in d.getfile_path, "SETTINGS"),
+    (lambda d: "artifact" in d.getfile_path.lower() and ("Artifact" in d.api_item or "artifact.py" in d.getfile_path) and d.object_type == "class", "ARTIFACT"),
+    
+    # Workspaces-related checks
+    (lambda d: "wandb_workspaces" in d.getfile_path and "reports" in d.getfile_path, "REPORTS"),
+    (lambda d: "wandb_workspaces" in d.getfile_path and "workspaces" in d.getfile_path, "WORKSPACES"),
+    
+    # Path-based checks
+    (lambda d: "sdk" in d.getfile_path and "data_type" in d.getfile_path, "DATATYPE"),
+    (lambda d: "apis" in d.getfile_path and "public" in d.getfile_path, "PUBLIC_API"),
+    (lambda d: "launch" in d.getfile_path and "LAUNCH_API" in SOURCE, "LAUNCH_API"),
+    (lambda d: "automations" in d.getfile_path, "AUTOMATIONS"),
+    (lambda d: "plot" in d.getfile_path, "CUSTOMCHARTS"),
+]
+
 def _type_key_string(docodile):
-    """Checks the filepath and checks for substrings (e.g. "sdk", "data_type").
+    """Determine the type of the object and return the appropriate frontmatter.
     
-    Based on substring, determine the type of the object. Return the
-    appropriate frontmatter string with the determined type.
+    Uses a rule-based approach to determine which SOURCE category an object
+    belongs to based on its file path, API item name, and object type.
+    
+    Args:
+        docodile: DocodileMaker object containing file path, API item, and object type
+        
+    Returns:
+        str: The frontmatter string for the determined type
     """
-    # Check for specific class names for top-level SDK items
-    file_path = docodile.getfile_path
-    api_item = docodile.api_item if hasattr(docodile, 'api_item') else ""
-    object_type = docodile.object_type if hasattr(docodile, 'object_type') else ""
+    # Note: file_path, api_item, and object_type are accessed via docodile in lambda functions
     
-    # Check for specific Artifact, Run, Settings classes - must be classes, not functions
-    if "artifact" in file_path.lower() and ("Artifact" in api_item or "artifact.py" in file_path) and object_type == "class":
-        return SOURCE["ARTIFACT"]["hugo_specs"]["frontmatter"] + "\n"
-    elif api_item == "Run" and object_type == "class":
-        # Only the Run class itself should go to RUN, not functions from wandb_run.py
-        return SOURCE["RUN"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "wandb_settings" in file_path and api_item == "Settings" and object_type == "class":
-        return SOURCE["SETTINGS"]["hugo_specs"]["frontmatter"] + "\n"
-    # Check for Reports and Workspaces
-    elif "wandb_workspaces" in file_path and "reports" in file_path:
-        return SOURCE["REPORTS"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "wandb_workspaces" in file_path and "workspaces" in file_path:
-        return SOURCE["WORKSPACES"]["hugo_specs"]["frontmatter"] + "\n"
-    # Existing checks
-    elif "sdk" and "data_type" in file_path: # Careful with data-type and data_type
-        return SOURCE["DATATYPE"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "apis" and "public" in file_path:
-        return SOURCE["PUBLIC_API"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "launch" in file_path and "LAUNCH_API" in SOURCE:
-        return SOURCE.get("LAUNCH_API", SOURCE["SDK"])["hugo_specs"]["frontmatter"] + "\n"
-    elif "automations" in file_path:
-        return SOURCE["AUTOMATIONS"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "plot" in file_path:
-        return SOURCE["CUSTOMCHARTS"]["hugo_specs"]["frontmatter"] + "\n"
-    else:
-        return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
+    # Apply rules in order - first match wins
+    for matcher, source_key in TYPE_DETERMINATION_RULES:
+        try:
+            if matcher(docodile):
+                # Handle LAUNCH_API which might not exist
+                if source_key == "LAUNCH_API":
+                    return SOURCE.get(source_key, SOURCE["SDK"])["hugo_specs"]["frontmatter"] + "\n"
+                return SOURCE[source_key]["hugo_specs"]["frontmatter"] + "\n"
+        except (KeyError, AttributeError):
+            # Skip rules that fail due to missing attributes
+            continue
+    
+    # Default to SDK if no rules match
+    return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
  
 
 def add_frontmatter(docodile):

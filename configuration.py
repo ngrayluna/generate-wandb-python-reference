@@ -9,7 +9,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Global Functions",
             "description": "Core W&B functions for initializing runs, logging data, and managing experiments.",
-            "frontmatter": "object_type: python_sdk_actions",
+            "frontmatter": "object_type: global_functions",
             "folder_name": "global-functions",
             "weight": 10,
         },
@@ -20,7 +20,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Artifact",
             "description": "Manage versioned datasets and models.",
-            "frontmatter": "object_type: python_sdk_artifact",
+            "frontmatter": "object_type: python_sdk_artifact_namespace",
             "folder_name": "artifact",
             "weight": 20,
         },
@@ -31,7 +31,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Run",
             "description": "Track and manage experiments.",
-            "frontmatter": "object_type: python_sdk_run",
+            "frontmatter": "object_type: python_sdk_run_namespace",
             "folder_name": "run",
             "weight": 30,
         },
@@ -42,7 +42,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Settings",
             "description": "Configure W&B behavior and preferences.",
-            "frontmatter": "object_type: python_sdk_settings",
+            "frontmatter": "object_type: python_sdk_settings_namespace",
             "folder_name": "settings",
             "weight": 40,
         },
@@ -53,7 +53,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Custom Charts",
             "description": "Create custom charts and visualizations.",
-            "frontmatter": "object_type: python_sdk_custom_charts",
+            "frontmatter": "object_type: python_sdk_plot_namespace",
             "folder_name": "custom-charts",
             "weight": 80,
         },
@@ -97,7 +97,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Reports",
             "description": "Create and manage W&B reports programmatically.",
-            "frontmatter": "object_type: python_sdk_reports",
+            "frontmatter": "object_type: python_sdk_reports_namespace",
             "folder_name": "reports",
             "weight": 110,
         },
@@ -108,7 +108,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Workspaces",
             "description": "Manage W&B workspaces and dashboards.",
-            "frontmatter": "object_type: python_sdk_workspaces",
+            "frontmatter": "object_type: python_sdk_workspaces_namespace",
             "folder_name": "workspaces",
             "weight": 120,
         },
