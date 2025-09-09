@@ -73,7 +73,7 @@ SOURCE = {
         "module": "wandb.apis.public",
         "file_path": BASE_DIR / "wandb" / "wandb" / "apis" / "public" / "__init__.py",
         "hugo_specs": {
-            "title": "Query API",
+            "title": "Public API Reference",
             "description": "Query and analyze data logged to W&B.",
             "frontmatter": "object_type: public_apis_namespace",
             "folder_name": "public-api",
@@ -92,7 +92,7 @@ SOURCE = {
         },
     },
     "REPORTS": {
-        "module": "wandb_workspaces.reports",
+        "module": "wandb_workspaces.reports.v2",
         "file_path": BASE_DIR / "wandb-workspaces" / "wandb_workspaces" / "reports" / "v2" / "__init__.py",
         "hugo_specs": {
             "title": "Reports",

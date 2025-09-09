@@ -22,14 +22,23 @@ from pathlib import Path
 # Path to the local version of the `wandb` package
 BASE_DIR = Path(__name__).resolve().parents[1] 
 local_wandb_path = BASE_DIR / "wandb"
+local_wandb_workspaces_path = BASE_DIR / "wandb-workspaces"
 
-# Add the local package path to sys.path
+# Add the local package paths to sys.path
 sys.path.insert(0, str(local_wandb_path))
+sys.path.insert(0, str(local_wandb_workspaces_path))
 
 # Confirm the correct version of wandb is being used
 import wandb
 print("Using wandb from:", wandb.__file__)
 print("Wandb version:", wandb.__version__)
+
+# Try to import wandb_workspaces if available
+try:
+    import wandb_workspaces
+    print("Using wandb_workspaces from:", wandb_workspaces.__file__)
+except ImportError:
+    print("wandb_workspaces not found - Reports and Workspaces docs will not be generated")
 ###### END ######
 
 
