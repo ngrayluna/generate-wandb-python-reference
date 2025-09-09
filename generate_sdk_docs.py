@@ -128,15 +128,32 @@ def _type_key_string(docodile):
     Based on substring, determine the type of the object. Return the
     appropriate frontmatter string with the determined type.
     """
-    if "sdk" and "data_type" in docodile.getfile_path: # Careful with data-type and data_type
+    # Check for specific class names for top-level SDK items
+    file_path = docodile.getfile_path
+    api_item = docodile.api_item if hasattr(docodile, 'api_item') else ""
+    
+    # Check for specific Artifact, Run, Settings classes
+    if "artifact" in file_path.lower() and ("Artifact" in api_item or "artifact.py" in file_path):
+        return SOURCE["ARTIFACT"]["hugo_specs"]["frontmatter"] + "\n"
+    elif "wandb_run" in file_path or ("Run" in api_item and "sdk" in file_path):
+        return SOURCE["RUN"]["hugo_specs"]["frontmatter"] + "\n"
+    elif "wandb_settings" in file_path or ("Settings" in api_item and "sdk" in file_path):
+        return SOURCE["SETTINGS"]["hugo_specs"]["frontmatter"] + "\n"
+    # Check for Reports and Workspaces
+    elif "wandb_workspaces" in file_path and "reports" in file_path:
+        return SOURCE["REPORTS"]["hugo_specs"]["frontmatter"] + "\n"
+    elif "wandb_workspaces" in file_path and "workspaces" in file_path:
+        return SOURCE["WORKSPACES"]["hugo_specs"]["frontmatter"] + "\n"
+    # Existing checks
+    elif "sdk" and "data_type" in file_path: # Careful with data-type and data_type
         return SOURCE["DATATYPE"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "apis" and "public" in docodile.getfile_path:
+    elif "apis" and "public" in file_path:
         return SOURCE["PUBLIC_API"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "launch" in docodile.getfile_path:
-        return SOURCE["LAUNCH_API"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "automations" in docodile.getfile_path:
+    elif "launch" in file_path and "LAUNCH_API" in SOURCE:
+        return SOURCE.get("LAUNCH_API", SOURCE["SDK"])["hugo_specs"]["frontmatter"] + "\n"
+    elif "automations" in file_path:
         return SOURCE["AUTOMATIONS"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "plot" in docodile.getfile_path:
+    elif "plot" in file_path:
         return SOURCE["CUSTOMCHARTS"]["hugo_specs"]["frontmatter"] + "\n"
     else:
         return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
