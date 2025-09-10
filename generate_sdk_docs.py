@@ -8,7 +8,7 @@ import importlib  # make sure this is at the top
 from inspect import isclass, isfunction, ismodule
 
 from lazydocs import MarkdownGenerator
-from typing import List, Type
+from typing import List, Type, Union, Dict, Tuple, Any, Literal, get_args, get_origin
 
 from configuration import SOURCE 
 import pydantic
@@ -315,7 +315,8 @@ def create_markdown(docodile, generator):
         if docodile.object_type == "class" and docodile.isPydantic:
             print("Creating Pydantic class markdown", "\n\n")
             print(f"Generating docstring for Pydantic class: {docodile.api_item}")
-            file.write(generate_Pydantic_docstring(docodile.object_attribute_value))
+            # Use the new Google-style docstring generator
+            file.write(generate_google_style_pydantic_docstring(docodile.object_attribute_value))
         elif docodile.object_type == "class" and not docodile.isPydantic:
             print("Creating class markdown", "\n\n")
             file.write(generator.class2md(docodile.object_attribute_value))        
@@ -428,6 +429,455 @@ def get_symbol_module_map(pyi_path: str) -> dict[str, str]:
                         mapping[part] = module_path
     return mapping
 
+
+
+def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
+    """Generate a Google-style docstring for a Pydantic model.
+    
+    This function creates comprehensive documentation for Pydantic models
+    following the specified format with <kbd> tags and proper formatting.
+    
+    Args:
+        cls: A Pydantic BaseModel class to document.
+        
+    Returns:
+        A formatted Google-style docstring as a string.
+    """
+    
+    # Start with class header and docstring
+    class_doc = inspect.getdoc(cls) or ""
+    lines = [f"## <kbd>class</kbd> `{cls.__name__}`"]
+    if class_doc:
+        lines.append(class_doc)
+    lines.append("")
+    
+    # Generate __init__ signature
+    lines.append("```python")
+    lines.append(f"class {cls.__name__}:")
+    
+    # Build __init__ parameters from model fields
+    init_params = []
+    for field_name, field_info in cls.model_fields.items():
+        # Format type annotation with quotes
+        field_type = _format_type_with_quotes(field_info.annotation)
+        
+        # Check if field has a default value
+        from pydantic_core import PydanticUndefined
+        
+        if field_info.default is not PydanticUndefined:
+            # Field has an explicit default
+            default_val = repr(field_info.default)
+            init_params.append(f"        {field_name}: '{field_type}' = {default_val}")
+        elif field_info.default_factory is not None:
+            # Field has a default factory - show as None for simplicity
+            init_params.append(f"        {field_name}: '{field_type}' = None")
+        else:
+            # Required field with no default
+            init_params.append(f"        {field_name}: '{field_type}'")
+    
+    # Add __init__ method
+    if init_params:
+        lines.append("    def __init__(")
+        lines.append(",\n".join(init_params))
+        lines.append("    ) → None:")
+        lines.append("        pass")
+    else:
+        lines.append("    def __init__(self) → None:")
+        lines.append("        pass")
+    
+    lines.append("```")
+    lines.append("")
+    
+    # Add Args section for fields
+    if cls.model_fields:
+        lines.append("**Args:**")
+        lines.append(" ")
+        
+        # Process each field
+        for field_name, field_info in cls.model_fields.items():
+            # Get field type without quotes for args section
+            field_type = _format_pydantic_type(field_info.annotation)
+            
+            # Get field description
+            description = field_info.description or ""
+            
+            # Format as bullet point with backticks
+            lines.append(f" - `{field_name}` ({field_type}): {description}")
+        
+        lines.append("")
+    
+    # Add Returns section if needed (for factory methods)
+    # For basic Pydantic models, we'll add a simple return description
+    lines.append("**Returns:**")
+    lines.append(f" An `{cls.__name__}` object.")
+    lines.append("")
+    
+    # Add __init__ method documentation
+    lines.append(f"### <kbd>method</kbd> `{cls.__name__}.__init__`")
+    lines.append("")
+    lines.append("```python")
+    
+    # Rebuild init signature for method section
+    if init_params:
+        lines.append("__init__(")
+        # Format parameters for method signature
+        formatted_params = []
+        for field_name, field_info in cls.model_fields.items():
+            field_type = _format_type_with_quotes(field_info.annotation)
+            
+            from pydantic_core import PydanticUndefined
+            
+            if field_info.default is not PydanticUndefined:
+                default_val = repr(field_info.default)
+                formatted_params.append(f"    {field_name}: '{field_type}' = {default_val}")
+            elif field_info.default_factory is not None:
+                formatted_params.append(f"    {field_name}: '{field_type}' = None")
+            else:
+                formatted_params.append(f"    {field_name}: '{field_type}'")
+        
+        lines.append(",\n".join(formatted_params))
+        lines.append(") → None")
+    else:
+        lines.append("__init__(self) → None")
+    
+    lines.append("```")
+    lines.append("")
+    
+    # Add other user-defined methods
+    methods = _get_pydantic_user_methods(cls)
+    for method_name, method_obj in methods:
+        lines.append(f"### <kbd>method</kbd> `{cls.__name__}.{method_name}`")
+        lines.append("")
+        
+        # Get method signature
+        sig = inspect.signature(method_obj)
+        
+        # Add code block with signature
+        lines.append("```python")
+        
+        # Format parameters
+        params = []
+        for param_name, param in sig.parameters.items():
+            if param_name != 'self':
+                if param.annotation != inspect.Parameter.empty:
+                    param_type = _format_type_with_quotes(param.annotation)
+                    if param.default != inspect.Parameter.empty:
+                        default_val = repr(param.default)
+                        params.append(f"    {param_name}: '{param_type}' = {default_val}")
+                    else:
+                        params.append(f"    {param_name}: '{param_type}'")
+                else:
+                    if param.default != inspect.Parameter.empty:
+                        params.append(f"    {param_name} = {repr(param.default)}")
+                    else:
+                        params.append(f"    {param_name}")
+        
+        # Format return type
+        return_type = "None"
+        if sig.return_annotation != inspect.Parameter.empty:
+            return_type = _format_type_with_quotes(sig.return_annotation)
+        
+        if params:
+            lines.append(f"{method_name}(")
+            lines.append(",\n".join(params))
+            lines.append(f") → {return_type}")
+        else:
+            lines.append(f"{method_name}() → {return_type}")
+        
+        lines.append("```")
+        lines.append("")
+        
+        # Parse and add method documentation
+        method_doc = inspect.getdoc(method_obj)
+        if method_doc:
+            parsed_doc = _parse_google_docstring(method_doc)
+            
+            # Add description
+            if parsed_doc['description']:
+                lines.append(parsed_doc['description'])
+                lines.append("")
+            
+            # Add Args section if present
+            if parsed_doc['args']:
+                lines.append("**Args:**")
+                lines.append(" ")
+                for arg_name, arg_desc in parsed_doc['args'].items():
+                    lines.append(f" - `{arg_name}`: {arg_desc}")
+                lines.append("")
+                
+            # Add Returns section if present
+            if parsed_doc['returns']:
+                lines.append("**Returns:**")
+                lines.append(f" - {parsed_doc['returns']}")
+                lines.append("")
+                
+            # Add Raises section if present
+            if parsed_doc['raises']:
+                lines.append("**Raises:**")
+                for exc_type, exc_desc in parsed_doc['raises'].items():
+                    lines.append(f" - `{exc_type}`: {exc_desc}")
+                lines.append("")
+    
+    return "\n".join(lines)
+
+
+def _format_type_with_quotes(annotation) -> str:
+    """Format a type annotation with appropriate quotes for signature display.
+    
+    Converts types to their string representation suitable for quoted display.
+    """
+    if annotation is None:
+        return "Any"
+        
+    # Handle None type
+    if annotation is type(None):
+        return "None"
+        
+    # Get the origin and args for generic types
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+    
+    # Handle Optional types (Union with None)
+    if origin is Union:
+        non_none_args = [arg for arg in args if arg is not type(None)]
+        if len(non_none_args) == 1:
+            # This is Optional[T]
+            inner_type = _format_type_with_quotes(non_none_args[0])
+            return f"{inner_type} | None"
+        else:
+            # This is a Union of multiple types
+            formatted_args = [_format_type_with_quotes(arg) for arg in args]
+            return " | ".join(formatted_args)
+    
+    # Handle List types
+    if origin in (list, List):
+        if args:
+            inner_type = _format_type_with_quotes(args[0])
+            return f"list[{inner_type}]"
+        return "list"
+    
+    # Handle Dict types
+    if origin in (dict, Dict):
+        if args and len(args) == 2:
+            key_type = _format_type_with_quotes(args[0])
+            value_type = _format_type_with_quotes(args[1])
+            return f"dict[{key_type}, {value_type}]"
+        return "dict"
+        
+    # Handle Tuple types
+    if origin in (tuple, Tuple):
+        if args:
+            formatted_args = [_format_type_with_quotes(arg) for arg in args]
+            return f"tuple[{', '.join(formatted_args)}]"
+        return "tuple"
+    
+    # Handle Literal types
+    if origin is Literal:
+        values = ', '.join(repr(arg) for arg in args)
+        return f"Literal[{values}]"
+    
+    # Handle basic types
+    if hasattr(annotation, '__name__'):
+        # Use lowercase for basic types in modern Python style
+        if annotation.__name__ in ('str', 'int', 'float', 'bool', 'bytes'):
+            return annotation.__name__
+        return annotation.__name__
+    
+    # Fallback to string representation
+    return str(annotation).replace('typing.', '')
+
+
+def _format_pydantic_type(annotation) -> str:
+    """Format a type annotation for display in documentation.
+    
+    Handles Optional, List, Dict, Union and other complex types.
+    """
+    
+    if annotation is None:
+        return "Any"
+        
+    # Handle None type
+    if annotation is type(None):
+        return "None"
+        
+    # Get the origin and args for generic types
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+    
+    # Handle Optional types (Union with None)
+    if origin is Union:
+        non_none_args = [arg for arg in args if arg is not type(None)]
+        if len(non_none_args) == 1:
+            # This is Optional[T]
+            inner_type = _format_pydantic_type(non_none_args[0])
+            return f"Optional[{inner_type}]"
+        else:
+            # This is a Union of multiple types
+            formatted_args = [_format_pydantic_type(arg) for arg in args]
+            return f"Union[{', '.join(formatted_args)}]"
+    
+    # Handle List types
+    if origin in (list, List):
+        if args:
+            inner_type = _format_pydantic_type(args[0])
+            return f"List[{inner_type}]"
+        return "List"
+    
+    # Handle Dict types
+    if origin in (dict, Dict):
+        if args and len(args) == 2:
+            key_type = _format_pydantic_type(args[0])
+            value_type = _format_pydantic_type(args[1])
+            return f"Dict[{key_type}, {value_type}]"
+        return "Dict"
+        
+    # Handle Tuple types
+    if origin in (tuple, Tuple):
+        if args:
+            formatted_args = [_format_pydantic_type(arg) for arg in args]
+            return f"Tuple[{', '.join(formatted_args)}]"
+        return "Tuple"
+    
+    # Handle Literal types
+    if origin is Literal:
+        values = ', '.join(repr(arg) for arg in args)
+        return f"Literal[{values}]"
+    
+    # Handle basic types and classes
+    if hasattr(annotation, '__name__'):
+        return annotation.__name__
+    
+    # Fallback to string representation
+    return str(annotation).replace('typing.', '')
+
+
+def _get_pydantic_user_methods(cls: Type[BaseModel]) -> List[Tuple[str, Any]]:
+    """Get user-defined methods from a Pydantic model.
+    
+    Filters out Pydantic internal methods and inherited BaseModel methods.
+    """
+    methods = []
+    
+    # Get all methods defined in the class
+    for name in dir(cls):
+        # Skip private/magic methods
+        if name.startswith('_'):
+            continue
+            
+        # Skip Pydantic internal methods
+        pydantic_methods = {
+            'model_config', 'model_fields', 'model_computed_fields',
+            'model_validate', 'model_validate_json', 'model_dump',
+            'model_dump_json', 'model_copy', 'model_construct',
+            'model_json_schema', 'model_parametrized_name',
+            'model_rebuild', 'model_post_init', 'dict', 'json',
+            'parse_obj', 'parse_raw', 'parse_file', 'from_orm',
+            'schema', 'schema_json', 'construct', 'copy',
+            'update_forward_refs', '__get_validators__',
+            'validate', '__fields__', '__config__'
+        }
+        
+        if name in pydantic_methods:
+            continue
+        
+        attr = getattr(cls, name)
+        
+        # Check if it's a method
+        if inspect.ismethod(attr) or inspect.isfunction(attr):
+            # Check if it's defined in this class (not inherited from BaseModel)
+            if name in cls.__dict__:
+                methods.append((name, attr))
+                
+    return methods
+
+
+def _parse_google_docstring(docstring: str) -> dict:
+    """Parse a Google-style docstring into sections.
+    
+    Returns a dictionary with keys: description, args, returns, raises
+    """
+    if not docstring:
+        return {'description': '', 'args': {}, 'returns': '', 'raises': {}}
+    
+    lines = docstring.split('\n')
+    result = {'description': '', 'args': {}, 'returns': '', 'raises': {}}
+    
+    current_section = 'description'
+    current_arg = None
+    current_exception = None
+    description_lines = []
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        
+        # Check for section headers
+        if stripped in ('Args:', 'Arguments:', 'Parameters:'):
+            current_section = 'args'
+            current_arg = None
+            i += 1
+            continue
+        elif stripped in ('Returns:', 'Return:'):
+            current_section = 'returns'
+            i += 1
+            continue
+        elif stripped in ('Raises:', 'Raise:'):
+            current_section = 'raises'
+            current_exception = None
+            i += 1
+            continue
+            
+        # Process content based on current section
+        if current_section == 'description':
+            description_lines.append(line)
+            
+        elif current_section == 'args':
+            # Check if this is a new argument (not indented or indented at arg level)
+            if stripped and not line.startswith('        '):
+                # Parse "arg_name (type): description" or "arg_name: description"
+                if ':' in line:
+                    parts = line.strip().split(':', 1)
+                    arg_part = parts[0].strip()
+                    desc_part = parts[1].strip() if len(parts) > 1 else ''
+                    
+                    # Remove type annotation if present
+                    if '(' in arg_part and ')' in arg_part:
+                        arg_name = arg_part[:arg_part.index('(')].strip()
+                    else:
+                        arg_name = arg_part
+                        
+                    current_arg = arg_name
+                    result['args'][current_arg] = desc_part
+            elif current_arg and line.startswith('        '):
+                # Continuation of current arg description
+                result['args'][current_arg] += ' ' + line.strip()
+                
+        elif current_section == 'returns':
+            if result['returns']:
+                result['returns'] += ' ' + line.strip()
+            else:
+                result['returns'] = line.strip()
+                
+        elif current_section == 'raises':
+            # Check if this is a new exception
+            if stripped and not line.startswith('        '):
+                if ':' in line:
+                    parts = line.strip().split(':', 1)
+                    exc_type = parts[0].strip()
+                    exc_desc = parts[1].strip() if len(parts) > 1 else ''
+                    current_exception = exc_type
+                    result['raises'][current_exception] = exc_desc
+            elif current_exception and line.startswith('        '):
+                # Continuation of current exception description
+                result['raises'][current_exception] += ' ' + line.strip()
+                
+        i += 1
+    
+    # Join description lines
+    result['description'] = '\n'.join(description_lines).strip()
+    
+    return result
 
 
 def main(args):
