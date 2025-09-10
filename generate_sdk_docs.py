@@ -465,8 +465,31 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
             # Get field description from Pydantic field info
             description = field_info.description or ""
             
-            # Format as bullet point with backticks
-            lines.append(f" - `{field_name}` ({field_type}): {description}")
+            # Handle multi-line descriptions
+            if description:
+                # Split description into lines
+                desc_lines = description.split('\n')
+                # Remove empty lines at the beginning and end
+                while desc_lines and not desc_lines[0].strip():
+                    desc_lines.pop(0)
+                while desc_lines and not desc_lines[-1].strip():
+                    desc_lines.pop()
+                
+                if desc_lines:
+                    # First line of description
+                    lines.append(f" - `{field_name}` ({field_type}): {desc_lines[0].strip()}")
+                    
+                    # Add remaining lines with proper indentation
+                    for desc_line in desc_lines[1:]:
+                        stripped = desc_line.strip()
+                        if stripped:  # Only add non-empty lines
+                            lines.append(f"   {stripped}")
+                else:
+                    # Empty description
+                    lines.append(f" - `{field_name}` ({field_type}): ")
+            else:
+                # No description
+                lines.append(f" - `{field_name}` ({field_type}): ")
         
         lines.append("")
     
