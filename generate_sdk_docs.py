@@ -450,42 +450,6 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
     if class_doc:
         lines.append(class_doc)
     lines.append("")
-    
-    # Generate __init__ signature
-    lines.append("```python")
-    lines.append(f"class {cls.__name__}:")
-    
-    # Build __init__ parameters from model fields
-    init_params = []
-    for field_name, field_info in cls.model_fields.items():
-        # Format type annotation with quotes
-        field_type = _format_type_with_quotes(field_info.annotation)
-        
-        # Check if field has a default value
-        from pydantic_core import PydanticUndefined
-        
-        if field_info.default is not PydanticUndefined:
-            # Field has an explicit default
-            default_val = repr(field_info.default)
-            init_params.append(f"        {field_name}: '{field_type}' = {default_val}")
-        elif field_info.default_factory is not None:
-            # Field has a default factory - show as None for simplicity
-            init_params.append(f"        {field_name}: '{field_type}' = None")
-        else:
-            # Required field with no default
-            init_params.append(f"        {field_name}: '{field_type}'")
-    
-    # Add __init__ method
-    if init_params:
-        lines.append("    def __init__(")
-        lines.append(",\n".join(init_params))
-        lines.append("    ) → None:")
-        lines.append("        pass")
-    else:
-        lines.append("    def __init__(self) → None:")
-        lines.append("        pass")
-    
-    lines.append("```")
     lines.append("")
     
     # Add Args section for fields
@@ -498,7 +462,7 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
             # Get field type without quotes for args section
             field_type = _format_pydantic_type(field_info.annotation)
             
-            # Get field description
+            # Get field description from Pydantic field info
             description = field_info.description or ""
             
             # Format as bullet point with backticks
@@ -506,36 +470,39 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
         
         lines.append("")
     
-    # Add Returns section if needed (for factory methods)
-    # For basic Pydantic models, we'll add a simple return description
+    # Add Returns section
     lines.append("**Returns:**")
     lines.append(f" An `{cls.__name__}` object.")
     lines.append("")
     
-    # Add __init__ method documentation
+    # Add __init__ method documentation with signature
     lines.append(f"### <kbd>method</kbd> `{cls.__name__}.__init__`")
     lines.append("")
     lines.append("```python")
     
-    # Rebuild init signature for method section
+    # Build __init__ signature from model fields
+    init_params = []
+    for field_name, field_info in cls.model_fields.items():
+        # Format type annotation with quotes
+        field_type = _format_type_with_quotes(field_info.annotation)
+        
+        # Check if field has a default value
+        from pydantic_core import PydanticUndefined
+        
+        if field_info.default is not PydanticUndefined:
+            # Field has an explicit default
+            default_val = repr(field_info.default)
+            init_params.append(f"    {field_name}: '{field_type}' = {default_val}")
+        elif field_info.default_factory is not None:
+            # Field has a default factory - show as None for simplicity
+            init_params.append(f"    {field_name}: '{field_type}' = None")
+        else:
+            # Required field with no default
+            init_params.append(f"    {field_name}: '{field_type}'")
+    
     if init_params:
         lines.append("__init__(")
-        # Format parameters for method signature
-        formatted_params = []
-        for field_name, field_info in cls.model_fields.items():
-            field_type = _format_type_with_quotes(field_info.annotation)
-            
-            from pydantic_core import PydanticUndefined
-            
-            if field_info.default is not PydanticUndefined:
-                default_val = repr(field_info.default)
-                formatted_params.append(f"    {field_name}: '{field_type}' = {default_val}")
-            elif field_info.default_factory is not None:
-                formatted_params.append(f"    {field_name}: '{field_type}' = None")
-            else:
-                formatted_params.append(f"    {field_name}: '{field_type}'")
-        
-        lines.append(",\n".join(formatted_params))
+        lines.append(",\n".join(init_params))
         lines.append(") → None")
     else:
         lines.append("__init__(self) → None")
@@ -543,22 +510,33 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
     lines.append("```")
     lines.append("")
     
-    # Add other user-defined methods
-    methods = _get_pydantic_user_methods(cls)
-    for method_name, method_obj in methods:
-        lines.append(f"### <kbd>method</kbd> `{cls.__name__}.{method_name}`")
+    # Add user-defined methods, properties, and classmethods
+    methods = _get_pydantic_user_methods_properties_classmethods(cls)
+    for method_name, method_obj, method_type in methods:
+        # Determine the appropriate tag
+        if method_type == "property":
+            lines.append(f"### <kbd>property</kbd> `{cls.__name__}.{method_name}`")
+        elif method_type == "classmethod":
+            lines.append(f"### <kbd>classmethod</kbd> `{cls.__name__}.{method_name}`")
+        else:  # regular method
+            lines.append(f"### <kbd>method</kbd> `{cls.__name__}.{method_name}`")
+        
         lines.append("")
         
-        # Get method signature
-        sig = inspect.signature(method_obj)
-        
-        # Add code block with signature
-        lines.append("```python")
-        
-        # Format parameters
-        params = []
-        for param_name, param in sig.parameters.items():
-            if param_name != 'self':
+        # Add code block with signature for methods (not properties)
+        if method_type != "property":
+            lines.append("```python")
+            
+            # Get method signature
+            sig = inspect.signature(method_obj)
+            
+            # Format parameters
+            params = []
+            for param_name, param in sig.parameters.items():
+                # Skip 'self' for instance methods, 'cls' for classmethods
+                if param_name in ('self', 'cls'):
+                    continue
+                    
                 if param.annotation != inspect.Parameter.empty:
                     param_type = _format_type_with_quotes(param.annotation)
                     if param.default != inspect.Parameter.empty:
@@ -571,52 +549,57 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
                         params.append(f"    {param_name} = {repr(param.default)}")
                     else:
                         params.append(f"    {param_name}")
-        
-        # Format return type
-        return_type = "None"
-        if sig.return_annotation != inspect.Parameter.empty:
-            return_type = _format_type_with_quotes(sig.return_annotation)
-        
-        if params:
-            lines.append(f"{method_name}(")
-            lines.append(",\n".join(params))
-            lines.append(f") → {return_type}")
-        else:
-            lines.append(f"{method_name}() → {return_type}")
-        
-        lines.append("```")
-        lines.append("")
+            
+            # Format return type
+            return_type = "None"
+            if sig.return_annotation != inspect.Parameter.empty:
+                return_type = _format_type_with_quotes(sig.return_annotation)
+            
+            if params:
+                lines.append(f"{method_name}(")
+                lines.append(",\n".join(params))
+                lines.append(f") → {return_type}")
+            else:
+                lines.append(f"{method_name}() → {return_type}")
+            
+            lines.append("```")
+            lines.append("")
         
         # Parse and add method documentation
         method_doc = inspect.getdoc(method_obj)
         if method_doc:
-            parsed_doc = _parse_google_docstring(method_doc)
-            
-            # Add description
-            if parsed_doc['description']:
-                lines.append(parsed_doc['description'])
+            if method_type == "property":
+                # For properties, just add the docstring as description
+                lines.append(method_doc)
                 lines.append("")
-            
-            # Add Args section if present
-            if parsed_doc['args']:
-                lines.append("**Args:**")
-                lines.append(" ")
-                for arg_name, arg_desc in parsed_doc['args'].items():
-                    lines.append(f" - `{arg_name}`: {arg_desc}")
-                lines.append("")
+            else:
+                parsed_doc = _parse_google_docstring(method_doc)
                 
-            # Add Returns section if present
-            if parsed_doc['returns']:
-                lines.append("**Returns:**")
-                lines.append(f" - {parsed_doc['returns']}")
-                lines.append("")
+                # Add description
+                if parsed_doc['description']:
+                    lines.append(parsed_doc['description'])
+                    lines.append("")
                 
-            # Add Raises section if present
-            if parsed_doc['raises']:
-                lines.append("**Raises:**")
-                for exc_type, exc_desc in parsed_doc['raises'].items():
-                    lines.append(f" - `{exc_type}`: {exc_desc}")
-                lines.append("")
+                # Add Args section if present
+                if parsed_doc['args']:
+                    lines.append("**Args:**")
+                    lines.append(" ")
+                    for arg_name, arg_desc in parsed_doc['args'].items():
+                        lines.append(f" - `{arg_name}`: {arg_desc}")
+                    lines.append("")
+                    
+                # Add Returns section if present
+                if parsed_doc['returns']:
+                    lines.append("**Returns:**")
+                    lines.append(f" - {parsed_doc['returns']}")
+                    lines.append("")
+                    
+                # Add Raises section if present
+                if parsed_doc['raises']:
+                    lines.append("**Raises:**")
+                    for exc_type, exc_desc in parsed_doc['raises'].items():
+                        lines.append(f" - `{exc_type}`: {exc_desc}")
+                    lines.append("")
     
     return "\n".join(lines)
 
@@ -751,44 +734,50 @@ def _format_pydantic_type(annotation) -> str:
     return str(annotation).replace('typing.', '')
 
 
-def _get_pydantic_user_methods(cls: Type[BaseModel]) -> List[Tuple[str, Any]]:
-    """Get user-defined methods from a Pydantic model.
+def _get_pydantic_user_methods_properties_classmethods(cls: Type[BaseModel]) -> List[Tuple[str, Any, str]]:
+    """Get user-defined methods, properties, and classmethods from a Pydantic model.
     
     Filters out Pydantic internal methods and inherited BaseModel methods.
+    Returns tuples of (name, object, type) where type is 'method', 'property', or 'classmethod'.
     """
     methods = []
     
-    # Get all methods defined in the class
-    for name in dir(cls):
+    # Skip Pydantic internal methods
+    pydantic_methods = {
+        'model_config', 'model_fields', 'model_computed_fields',
+        'model_validate', 'model_validate_json', 'model_dump',
+        'model_dump_json', 'model_copy', 'model_construct',
+        'model_json_schema', 'model_parametrized_name',
+        'model_rebuild', 'model_post_init', 'dict', 'json',
+        'parse_obj', 'parse_raw', 'parse_file', 'from_orm',
+        'schema', 'schema_json', 'construct', 'copy',
+        'update_forward_refs', '__get_validators__',
+        'validate', '__fields__', '__config__'
+    }
+    
+    # Iterate through the class's own __dict__ to find user-defined methods
+    for name, obj in cls.__dict__.items():
         # Skip private/magic methods
         if name.startswith('_'):
             continue
             
         # Skip Pydantic internal methods
-        pydantic_methods = {
-            'model_config', 'model_fields', 'model_computed_fields',
-            'model_validate', 'model_validate_json', 'model_dump',
-            'model_dump_json', 'model_copy', 'model_construct',
-            'model_json_schema', 'model_parametrized_name',
-            'model_rebuild', 'model_post_init', 'dict', 'json',
-            'parse_obj', 'parse_raw', 'parse_file', 'from_orm',
-            'schema', 'schema_json', 'construct', 'copy',
-            'update_forward_refs', '__get_validators__',
-            'validate', '__fields__', '__config__'
-        }
-        
         if name in pydantic_methods:
             continue
         
-        attr = getattr(cls, name)
-        
-        # Check if it's a method
-        if inspect.ismethod(attr) or inspect.isfunction(attr):
-            # Check if it's defined in this class (not inherited from BaseModel)
-            if name in cls.__dict__:
-                methods.append((name, attr))
+        # Check if it's a property
+        if isinstance(obj, property):
+            methods.append((name, obj.fget, 'property'))
+        # Check if it's a classmethod
+        elif isinstance(obj, classmethod):
+            methods.append((name, obj.__func__, 'classmethod'))
+        # Check if it's a regular method
+        elif inspect.isfunction(obj):
+            methods.append((name, obj, 'method'))
                 
     return methods
+
+
 
 
 def _parse_google_docstring(docstring: str) -> dict:
