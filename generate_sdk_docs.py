@@ -203,6 +203,142 @@ def is_user_defined(method) -> bool:
     print(f"Method {method.__name__} is_user_defined: {result}")
     return result
 
+def custom_class2md(cls: Any, generator) -> str:
+    """Custom class documentation generator that includes property return types.
+    
+    This function extends lazydocs' class2md to properly document property return types.
+    
+    Args:
+        cls: The class to document
+        generator: The MarkdownGenerator instance from lazydocs
+        
+    Returns:
+        Markdown documentation for the class with property return types
+    """
+    # Start with the default lazydocs output
+    base_output = generator.class2md(cls)
+    
+    # Find and enhance property documentation
+    lines = base_output.split('\n')
+    enhanced_lines = []
+    i = 0
+    
+    while i < len(lines):
+        line = lines[i]
+        
+        # Check if this is a property line
+        if '<kbd>property</kbd>' in line:
+            # Extract property name from the line
+            import re
+            match = re.search(r'<kbd>property</kbd>\s+(\w+\.)?(\w+)', line)
+            if match:
+                prop_name = match.group(2)
+                
+                # Try to get the property from the class
+                try:
+                    prop_obj = getattr(cls, prop_name)
+                    if isinstance(prop_obj, property) and prop_obj.fget:
+                        # Get the return type annotation
+                        sig = inspect.signature(prop_obj.fget)
+                        if sig.return_annotation != inspect.Parameter.empty:
+                            # Format the return type
+                            return_type = _format_type_for_display(sig.return_annotation)
+                            
+                            # Add the line with property name
+                            enhanced_lines.append(line)
+                            
+                            # Collect all docstring lines until we hit the separator
+                            i += 1
+                            docstring_lines = []
+                            while i < len(lines) and not lines[i].startswith('---'):
+                                docstring_lines.append(lines[i])
+                                i += 1
+                                
+                            # Add the docstring
+                            for doc_line in docstring_lines:
+                                enhanced_lines.append(doc_line)
+                                
+                            # Add return type information if there was a docstring
+                            if any(line.strip() for line in docstring_lines):
+                                enhanced_lines.append("")
+                                enhanced_lines.append("")
+                                enhanced_lines.append("**Returns:**")
+                                enhanced_lines.append(f" - `{return_type}`: The {prop_name} property value.")
+                            
+                            # We've already processed up to the separator, so continue from here
+                            i -= 1  # Back up one since we'll increment at the bottom of the loop
+                            
+                            # Skip to next iteration
+                            i += 1
+                            continue
+                except (AttributeError, TypeError):
+                    pass
+        
+        enhanced_lines.append(line)
+        i += 1
+    
+    return '\n'.join(enhanced_lines)
+
+
+def _format_type_for_display(annotation) -> str:
+    """Format a type annotation for display in documentation.
+    
+    Args:
+        annotation: Type annotation to format
+        
+    Returns:
+        Formatted string representation of the type
+    """
+    if annotation is None:
+        return "Any"
+    
+    # Handle string annotations
+    if isinstance(annotation, str):
+        return annotation
+        
+    # Handle None type
+    if annotation is type(None):
+        return "None"
+        
+    # Get the origin and args for generic types
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+    
+    # Handle Union types (including Optional)
+    if origin is Union:
+        formatted_args = [_format_type_for_display(arg) for arg in args]
+        return " | ".join(formatted_args)
+    
+    # Handle List types
+    if origin in (list, List):
+        if args:
+            inner_type = _format_type_for_display(args[0])
+            return f"list[{inner_type}]"
+        return "list"
+    
+    # Handle Dict types
+    if origin in (dict, Dict):
+        if args and len(args) == 2:
+            key_type = _format_type_for_display(args[0])
+            value_type = _format_type_for_display(args[1])
+            return f"dict[{key_type}, {value_type}]"
+        return "dict"
+        
+    # Handle Tuple types
+    if origin in (tuple, Tuple):
+        if args:
+            formatted_args = [_format_type_for_display(arg) for arg in args]
+            return f"tuple[{', '.join(formatted_args)}]"
+        return "tuple"
+    
+    # Handle basic types
+    if hasattr(annotation, '__name__'):
+        return annotation.__name__
+    
+    # Fallback to string representation
+    return str(annotation).replace('typing.', '')
+
+
 def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
     """
     Generate a Google-style class docstring with fields and user-defined methods only.
@@ -322,7 +458,8 @@ def create_markdown(docodile, generator):
             file.write(generate_google_style_pydantic_docstring(docodile.object_attribute_value))
         elif docodile.object_type == "class" and not docodile.isPydantic:
             print("Creating class markdown", "\n\n")
-            file.write(generator.class2md(docodile.object_attribute_value))        
+            # Use custom class2md that handles properties with return types
+            file.write(custom_class2md(docodile.object_attribute_value, generator))        
         elif docodile.object_type == "function":
             print("Creating function markdown", "\n\n")
             file.write(generator.func2md(docodile.object_attribute_value))
