@@ -75,6 +75,9 @@ class MarkdownCleaner:
             self.attr_block_pattern
         )
 
+        # -- Move __init__ method before Args section in class documentation
+        cleaned = self._move_init_before_args(cleaned)
+
         return cleaned
 
     # ------------------------------------------------------------------ #
@@ -83,6 +86,47 @@ class MarkdownCleaner:
         def keep_or_drop(match: re.Match) -> str:
             return "" if token in match.group(0) else match.group(0)
         return pattern.sub(keep_or_drop, text)
+    
+    # ------------------------------------------------------------------ #
+    def _move_init_before_args(self, text: str) -> str:
+        """
+        Move __init__ method blocks to appear before Args sections in class documentation.
+        
+        This finds patterns where a class has an Args section followed by an __init__ method,
+        and reorganizes them so the __init__ appears immediately after the class description
+        and before the Args section.
+        """
+        # Pattern to match a class section with Args before __init__
+        class_with_args_pattern = re.compile(
+            r'(## <kbd>class</kbd> `[^`]+`[\s\S]*?)'  # Class header and description (non-greedy)
+            r'(\n\*\*Args:\*\*[\s\S]*?)'               # Args section (non-greedy)
+            r'(\n\*\*Returns:\*\*[\s\S]*?)?'           # Optional Returns section (non-greedy)
+            r'(\n### <kbd>method</kbd> `[^`]*__init__[^`]*`\n+```python\n__init__\([\s\S]*?\n```)',  # __init__ method
+            re.MULTILINE | re.DOTALL
+        )
+        
+        def reorder_match(match):
+            groups = match.groups()
+            class_header = groups[0].rstrip()  # Remove trailing whitespace
+            args_section = groups[1] if groups[1] else ""
+            returns_section = groups[2] if groups[2] else ""
+            init_method = groups[3] if groups[3] else ""
+            
+            # Reorganize: class header + init method + args + returns
+            if init_method:
+                # Add proper spacing
+                result = class_header + "\n"
+                result += init_method + "\n"
+                result += args_section
+                if returns_section:
+                    result += returns_section
+                return result
+            return match.group(0)
+        
+        # Apply the reorganization
+        text = class_with_args_pattern.sub(reorder_match, text)
+        
+        return text
 
 
 # ----------------------------------------------------------------------#
