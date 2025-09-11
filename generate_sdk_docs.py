@@ -15,7 +15,14 @@ import pydantic
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-###### USE LOCAL VERSION OF WANDB for debugging ######
+###############################################################################
+# Temporary flag to hide launch APIs
+# This is used to hide the launch APIs from wandb.apis.public.__init__.py
+HIDE_LAUNCH_APIS = True
+###############################################################################
+
+###############################################################################
+# USE LOCAL VERSION OF WANDB for debugging
 import sys
 from pathlib import Path
 
@@ -30,12 +37,8 @@ sys.path.insert(0, str(local_wandb_path))
 import wandb
 print("Using wandb from:", wandb.__file__)
 print("Wandb version:", wandb.__version__)
-###### END ######
+###############################################################################
 
-
-# Temporary flag to hide launch APIs
-# This is used to hide the launch APIs from the public API documentation.
-HIDE_LAUNCH_APIS = True
 
 class DocodileMaker:
     def __init__(self, module, api, output_dir, SOURCE):
@@ -451,7 +454,42 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
         lines.append(class_doc)
     lines.append("")
     lines.append("")
+
+    # Add __init__ method documentation with signature
+    lines.append(f"### <kbd>method</kbd> `{cls.__name__}.__init__`")
+    lines.append("")
+    lines.append("```python")
     
+    # Build __init__ signature from model fields
+    init_params = []
+    for field_name, field_info in cls.model_fields.items():
+        # Format type annotation with quotes
+        field_type = _format_type_with_quotes(field_info.annotation)
+        
+        # Check if field has a default value
+        from pydantic_core import PydanticUndefined
+        
+        if field_info.default is not PydanticUndefined:
+            # Field has an explicit default
+            default_val = repr(field_info.default)
+            init_params.append(f"    {field_name}: '{field_type}' = {default_val}")
+        elif field_info.default_factory is not None:
+            # Field has a default factory - show as None for simplicity
+            init_params.append(f"    {field_name}: '{field_type}' = None")
+        else:
+            # Required field with no default
+            init_params.append(f"    {field_name}: '{field_type}'")
+    
+    if init_params:
+        lines.append("__init__(")
+        lines.append(",\n".join(init_params))
+        lines.append(") → None")
+    else:
+        lines.append("__init__(self) → None")
+    
+    lines.append("```")
+    lines.append("")
+
     # Add Args section for fields
     if cls.model_fields:
         lines.append("**Args:**")
@@ -496,41 +534,6 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
     # Add Returns section
     lines.append("**Returns:**")
     lines.append(f" An `{cls.__name__}` object.")
-    lines.append("")
-    
-    # Add __init__ method documentation with signature
-    lines.append(f"### <kbd>method</kbd> `{cls.__name__}.__init__`")
-    lines.append("")
-    lines.append("```python")
-    
-    # Build __init__ signature from model fields
-    init_params = []
-    for field_name, field_info in cls.model_fields.items():
-        # Format type annotation with quotes
-        field_type = _format_type_with_quotes(field_info.annotation)
-        
-        # Check if field has a default value
-        from pydantic_core import PydanticUndefined
-        
-        if field_info.default is not PydanticUndefined:
-            # Field has an explicit default
-            default_val = repr(field_info.default)
-            init_params.append(f"    {field_name}: '{field_type}' = {default_val}")
-        elif field_info.default_factory is not None:
-            # Field has a default factory - show as None for simplicity
-            init_params.append(f"    {field_name}: '{field_type}' = None")
-        else:
-            # Required field with no default
-            init_params.append(f"    {field_name}: '{field_type}'")
-    
-    if init_params:
-        lines.append("__init__(")
-        lines.append(",\n".join(init_params))
-        lines.append(") → None")
-    else:
-        lines.append("__init__(self) → None")
-    
-    lines.append("```")
     lines.append("")
     
     # Add user-defined methods, properties, and classmethods
