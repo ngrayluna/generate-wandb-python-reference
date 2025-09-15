@@ -9,7 +9,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Actions",
             "description": "Use during training to log experiments, track metrics, and save model artifacts.",
-            "frontmatter": "object_type: python_sdk_actions",
+            "frontmatter": "namespace: python_sdk_actions",
             "folder_name": "actions",
             "weight": 10,
         },
@@ -20,7 +20,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Custom Charts",
             "description": "Create custom charts and visualizations.",
-            "frontmatter": "object_type: python_sdk_custom_charts",
+            "frontmatter": "namespace: python_sdk_custom_charts",
             "folder_name": "custom-charts",
             "weight": 80,
         },
@@ -31,7 +31,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Data Types",
             "description": "Defines Data Types for logging interactive visualizations to W&B.",
-            "frontmatter": "object_type: python_sdk_data_type",
+            "frontmatter": "namespace: python_sdk_data_type",
             "folder_name": "data-types",
             "weight": 70,
         },
@@ -42,7 +42,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Query API",
             "description": "Query and analyze data logged to W&B.",
-            "frontmatter": "object_type: public_apis_namespace",
+            "frontmatter": "namespace: public_apis_namespace",
             "folder_name": "public-api",
             "weight": 90,
         },
@@ -53,7 +53,7 @@ SOURCE = {
         "hugo_specs": {
             "title": "Automations",
             "description": "Automate your W&B workflows.",
-            "frontmatter": "object_type: automations_namespace",
+            "frontmatter": "namespace: automations_namespace",
             "folder_name": "automations",
             "weight": 100,
         },

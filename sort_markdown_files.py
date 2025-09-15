@@ -39,10 +39,10 @@ def build_local_paths(root_directory):
     return SOURCE_COPY
 
 
-def create_object_type_lookup(source_dict):
-    """Map object_type values from frontmatter to SOURCE keys.
+def create_namespace_lookup(source_dict):
+    """Map "namespace" values from frontmatter to SOURCE keys.
     
-    Creates a reverse index from SOURCE dict mapping—where the "object_type"
+    Creates a reverse index from SOURCE dict mapping—where the ""namespace""
     value in the "frontmatter" is the key. E.g.
 
     "LAUNCH_API": {
@@ -51,14 +51,14 @@ def create_object_type_lookup(source_dict):
     "hugo_specs": {
         "title": "Launch Library",
         "description": "A collection of launch APIs for W&B.",
-        "frontmatter": "object_type: launch_apis_namespace",
+        "frontmatter": ""namespace": launch_apis_namespace",
         "folder_name": "launch-library",
     },
 
     This is a utility function that creates a dictionary mapping
-    object_type values found in the frontmatter to their corresponding
+    "namespace" values found in the frontmatter to their corresponding
     keys in the SOURCE dictionary. This allows for easy lookup when
-    sorting markdown files based on their object_type.
+    sorting markdown files based on their "namespace".
 
     Args:
         source_dict (dict): The SOURCE dictionary containing the configuration.
@@ -68,13 +68,13 @@ def create_object_type_lookup(source_dict):
     }
 
 def sort_markdown_files(source_directory, source_copy):
-    """Read markdown files, extract object_type, and sort them."""
+    """Read markdown files, extract "namespace", and sort them."""
 
-    # Create dictionary where the keys are object_type values from frontmatter
+    # Create dictionary where the keys are namespace values from frontmatter
     # and the values are the corresponding keys in the SOURCE dictionary
     # Returns something lke:
     # {'api': 'SDK', 'data-type': 'DATATYPE', 'public_apis_namespace': 'PUBLIC_API', 'launch_apis_namespace': 'LAUNCH_API'}
-    object_type_to_key = create_object_type_lookup(source_copy)
+    namespace_to_key = create_namespace_lookup(source_copy)
 
     # Create a set to keep track of directories created
     directories_created = []
@@ -84,14 +84,14 @@ def sort_markdown_files(source_directory, source_copy):
         # Get the frontmatter from the markdown file
         frontmatter = read_markdown_metadata(filepath)
 
-        object_type = frontmatter.get("object_type")
-        if not object_type:
-            print(f"Skipping {filepath}: No object_type in frontmatter.")
+        namespace = frontmatter.get("namespace")
+        if not namespace:
+            print(f"Skipping {filepath}: No namespace in frontmatter.")
             continue
 
-        source_key = object_type_to_key.get(object_type)
+        source_key = namespace_to_key.get(namespace)
         if not source_key:
-            print(f"Skipping {filepath}: Unknown object_type '{object_type}'.")
+            print(f"Skipping {filepath}: Unknown namespace '{namespace}'.")
             continue
 
         # Get the destination directory from the SOURCE dictionary
