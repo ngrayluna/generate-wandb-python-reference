@@ -15,11 +15,6 @@ import pydantic
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-###############################################################################
-# Temporary flag to hide launch APIs
-# This is used to hide the launch APIs from wandb.apis.public.__init__.py
-HIDE_LAUNCH_APIS = True
-###############################################################################
 
 ###############################################################################
 # USE LOCAL VERSION OF WANDB for debugging
@@ -478,31 +473,6 @@ def check_temp_dir(temp_output_dir):
     """
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
-
-def get_public_apis_from_init(file_path: str) -> List[str]:
-    """Extracts module names from an __init__.py file in the wandb.apis.public namespace.
-    
-    Args:
-        file_path (str): Path to the __init__.py file.
-
-    Returns:
-        List[str]: List of module names with ".md" suffix.
-    """
-    modules = set()
-    pattern = re.compile(r"^from wandb\.apis\.public\.(\w+) import")
-
-    with open(file_path, "r", encoding="utf-8") as file:
-        for line in file:
-            match = pattern.match(line)
-            if match:
-                modules.add(match.group(1))
-
-    if HIDE_LAUNCH_APIS:
-        modules.remove("jobs")
-        modules.remove("query_generator")
-
-    # Convert to sorted list and append ".md" to each module name
-    return sorted(modules)
 
 def get_api_list_from_init(file_path):
     """Get list of APIs from a Python __init__.py or .pyi file.
@@ -1047,21 +1017,12 @@ def main(args):
     # Make a copy of the SOURCE dictionary to avoid modifying the original
     SOURCE_DICT_COPY = SOURCE.copy()  
 
-    ## Temporary ##
-    # To do: Remove this method of extracting public APIs from the __init__.py file.
-    import_export_api_list = get_public_apis_from_init(local_wandb_path / "wandb" / "apis" / "public" / "__init__.py")
-    SOURCE_DICT_COPY["PUBLIC_API"]["apis_found"] = import_export_api_list
-    ## End Temporary ##
-
     # Get list of APIs from the __init__ files for each namespace
     # and add to the SOURCE_DICT_COPY dictionary.
     for k in list(SOURCE_DICT_COPY.keys()): # Returns key from configuration.py ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
 
-        # Get APIs for each namespace
-        if "apis_found" not in SOURCE_DICT_COPY[k]:
-            # Go through each key in the SOURCE dictionary 
-            # Returns top level keys in SOURCE dict and stores into list ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
-            SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])
+        # Get the list of APIs from the __init__.py or .pyi file
+        SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])
 
         # Get the symbol to module mapping for each API
         # Returns a dict of symbol to module mapping
