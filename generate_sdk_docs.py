@@ -702,8 +702,21 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
         method_doc = inspect.getdoc(method_obj)
         if method_doc:
             if method_type == "property":
-                # For properties, just add the docstring as description
+                # For properties, add the docstring and return type
                 lines.append(method_doc)
+                
+                # Try to get the return type annotation if available
+                if method_obj:  # method_obj is the fget function for properties
+                    try:
+                        sig = inspect.signature(method_obj)
+                        if sig.return_annotation != inspect.Parameter.empty:
+                            return_type = _format_type_for_display(sig.return_annotation)
+                            lines.append("")
+                            lines.append("**Returns:**")
+                            lines.append(f" - `{return_type}`: The {method_name} property value.")
+                    except (TypeError, ValueError):
+                        pass  # If we can't get signature, just skip return type
+                
                 lines.append("")
             else:
                 parsed_doc = _parse_google_docstring(method_doc)
