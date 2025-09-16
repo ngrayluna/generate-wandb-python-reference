@@ -150,7 +150,7 @@ def add_frontmatter(docodile):
 
 def _data_type_key_string(docodile):
     """Add "function" or "Class" to the frontmatter."""
-    return f"data_type_classification: {docodile.object_type}\n"
+    return f"python_object_type: {docodile.object_type}\n"
 
 def _github_button(href_links):
     """To do: Add hugo scripting to add this function. For now, just add code line # for debugging.

@@ -136,9 +136,9 @@ def sort_functions_and_classes(filepath):
     # Move the functions and classes into their respective directories
     for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
         frontmatter = read_markdown_metadata(filepath)
-        datatype = frontmatter.get("data_type_classification")
+        datatype = frontmatter.get("python_object_type")
         if not datatype:
-            print(f"Skipping {filepath}: No data_type_classification in frontmatter.")
+            print(f"Skipping {filepath}: No python_object_type in frontmatter.")
 
         if "function" in datatype:
             shutil.move(filepath, functions_dir)
