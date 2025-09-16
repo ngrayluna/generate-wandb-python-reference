@@ -16,21 +16,26 @@ def build_local_paths(root_directory):
     SOURCE_COPY = SOURCE.copy()
     
     # First create the sdk directory
-    sdk_dir = os.path.join(root_directory, "sdk")
-    os.makedirs(sdk_dir, exist_ok=True)
+    # sdk_dir = os.path.join(root_directory, "sdk")
+    # os.makedirs(sdk_dir, exist_ok=True)
     
     for key, config in SOURCE_COPY.items():
         folder_name = config["hugo_specs"]["folder_name"]
         
-        if key == "SDK":
-            # Place SDK files directly in the sdk directory, not in a subdirectory
-            local_path = sdk_dir
-        elif key in ["DATATYPE", "CUSTOMCHARTS", "LAUNCH_API"]:
-            # Place module in SDK Directory
-            local_path = os.path.join(sdk_dir, folder_name)
-        else:
-            # Place other entries directly under root_directory
-            local_path = os.path.join(root_directory, folder_name)
+        local_path = os.path.join(root_directory, folder_name)
+
+        # if key == "SDK":
+        #     # Place SDK files directly in the sdk directory, not in a subdirectory
+        #     local_path = root_directory
+        #     print(f"SDK directory: {local_path}")
+        # else:
+        #     local_path = os.path.join(root_directory, folder_name)
+        # elif key in ["DATATYPE", "CUSTOMCHARTS", "AUTOMATIONS"]:
+        #     # Place module in SDK Directory
+        #     local_path = os.path.join(sdk_dir, folder_name)
+        # else:
+        #     # Place other entries directly under root_directory
+        #     local_path = os.path.join(root_directory, folder_name)
             
         SOURCE_COPY[key]["hugo_specs"]["local_path"] = local_path
         print(f"Creating directory: {local_path}")
@@ -127,11 +132,18 @@ def read_markdown_metadata(filepath):
 
 def sort_functions_and_classes(filepath):
     """Sort functions and classes into their own directories."""
+
+    # Keep only the the root directory path
+    head, tail = os.path.split(filepath)
+
     # Create a new directory for functions and classes
-    functions_dir = os.path.join(os.getcwd(), filepath, "functions")
-    classes_dir = os.path.join(os.getcwd(), filepath, "classes")
+    functions_dir = os.path.join(os.getcwd(), head, "functions")
+    classes_dir = os.path.join(os.getcwd(), head, "experiments")
     os.makedirs(functions_dir, exist_ok=True)
     os.makedirs(classes_dir, exist_ok=True)
+
+    print(f"Sorting functions and classes in {filepath}")
+    print(f"Created directories: {functions_dir}, {classes_dir}")
 
     # Move the functions and classes into their respective directories
     for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
@@ -140,6 +152,7 @@ def sort_functions_and_classes(filepath):
         if not datatype:
             print(f"Skipping {filepath}: No python_object_type in frontmatter.")
 
+        # Sort based on the datatype
         if "function" in datatype:
             shutil.move(filepath, functions_dir)
         elif "class" in datatype:
@@ -148,36 +161,49 @@ def sort_functions_and_classes(filepath):
     return
 
 
+
+def delete_empty_directories(root_directory):
+    """Delete empty directories in the root directory."""
+    for dirpath, dirnames, filenames in os.walk(root_directory, topdown=False):
+        if not dirnames and not filenames:
+            print(f"Deleting empty directory: {dirpath}")
+            os.rmdir(dirpath)
+
+def get_global_objects_path(source_copy, directories_created):
+    """Get the path where global classes and functions are stored.
+    
+    (i.e. wandb.wandb.__init__.py)
+    """
+    global_object_path = source_copy["SDK"]["hugo_specs"]["local_path"]
+    
+    # Find the sdk directory in the created directories
+    global_fun_root_path = None
+    for partial_path in directories_created:
+        if partial_path == global_object_path:
+            global_fun_root_path = partial_path
+            break
+    return global_fun_root_path
+
+
+
 def main(args):
     source_directory = args.source_directory
     root_directory = args.destination_directory
-
-    # Define the global module path. This has a list of legacy functions that we need to extract but don't advise using.
-    BASE_DIR = Path(__name__).resolve().parents[1] 
-    global_module_path = BASE_DIR / "wandb" / "wandb" / "sdk" / "lib" / "module.py"
 
     # Step 1: Build folder structure and local_path mapping
     source_copy = build_local_paths(root_directory)
 
     # Step 2: Sort markdown files based on frontmatter
-    # Returns a set of directories created
-    # Returns: {'python/sdk/data-type', 'python/automations', 'python/sdk/actions', ...}
+    # Returns dictionary: {'python/data-types', 'python/automations', 'python/global', ...}
     directories_created = sort_markdown_files(source_directory, source_copy)
 
-    # Grab whatever the directory "action" APIs are in
-    # Since SDK files are now placed directly in the sdk directory, look for that
-    sdk_path = source_copy["SDK"]["hugo_specs"]["local_path"]
-    
-    # Find the sdk directory in the created directories
-    global_fun_root_path = None
-    for partial_path in directories_created:
-        if partial_path == sdk_path:
-            global_fun_root_path = partial_path
-            break
-    print(f"Found global_dir_root: {global_fun_root_path}")
+    print(f"Directories created: {directories_created}")
 
     # Step 3: Sort functions and classes into their own directories
-    sort_functions_and_classes(global_fun_root_path)
+    sort_functions_and_classes(get_global_objects_path(source_copy, directories_created))
+
+    # Step 4: Delete any empty directories
+    delete_empty_directories(root_directory)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

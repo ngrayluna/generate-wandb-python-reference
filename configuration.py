@@ -10,7 +10,7 @@ SOURCE = {
             "title": "Actions",
             "description": "Use during training to log experiments, track metrics, and save model artifacts.",
             "frontmatter": "namespace: python_sdk_actions",
-            "folder_name": "actions",
+            "folder_name": "global",
             "weight": 10,
         },
     },
