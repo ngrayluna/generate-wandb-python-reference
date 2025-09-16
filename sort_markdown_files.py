@@ -144,14 +144,6 @@ def sort_functions_and_classes(filepath):
     return
 
 
-
-def delete_empty_directories(root_directory):
-    """Delete empty directories in the root directory."""
-    for dirpath, dirnames, filenames in os.walk(root_directory, topdown=False):
-        if not dirnames and not filenames:
-            print(f"Deleting empty directory: {dirpath}")
-            os.rmdir(dirpath)
-
 def get_global_objects_path(source_copy, directories_created):
     """Get the path where global classes and functions are stored.
     
@@ -185,8 +177,6 @@ def main(args):
     # Step 3: Sort functions and classes into their own directories
     sort_functions_and_classes(get_global_objects_path(source_copy, directories_created))
 
-    # Step 4: Delete any empty directories
-    delete_empty_directories(root_directory)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
