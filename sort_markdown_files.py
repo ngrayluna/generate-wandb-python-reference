@@ -15,10 +15,6 @@ def build_local_paths(root_directory):
     """Create folders based on SOURCE and add local_path."""
     SOURCE_COPY = SOURCE.copy()
     
-    # First create the sdk directory
-    # sdk_dir = os.path.join(root_directory, "sdk")
-    # os.makedirs(sdk_dir, exist_ok=True)
-    
     for key, config in SOURCE_COPY.items():
         folder_name = config["hugo_specs"]["folder_name"]
         
