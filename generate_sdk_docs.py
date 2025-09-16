@@ -130,8 +130,8 @@ def _type_key_string(docodile):
         return SOURCE["DATATYPE"]["hugo_specs"]["frontmatter"] + "\n"
     elif "apis" and "public" in docodile.getfile_path:
         return SOURCE["PUBLIC_API"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "launch" in docodile.getfile_path:
-        return SOURCE["LAUNCH_API"]["hugo_specs"]["frontmatter"] + "\n"
+    # elif "launch" in docodile.getfile_path:
+    #     return SOURCE["LAUNCH_API"]["hugo_specs"]["frontmatter"] + "\n"
     elif "automations" in docodile.getfile_path:
         return SOURCE["AUTOMATIONS"]["hugo_specs"]["frontmatter"] + "\n"
     elif "plot" in docodile.getfile_path:
@@ -140,7 +140,7 @@ def _type_key_string(docodile):
         return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
  
 
-def add_frontmatter(docodile):
+def _add_frontmatter(docodile):
     """Add frontmatter to the markdown file.
     
     Args:
@@ -176,27 +176,6 @@ def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob
     href_links = os.path.join(base_url, _extract_filename_from_path(filename))
     return _github_button(href_links)
 
-## TO DO: Make namepsace agnostic.
-PROJECT_NAMESPACE = "wandb.automations"
-
-def is_user_defined(method) -> bool:
-    """
-    Check if a method is defined in the project's namespace, explicitly excluding Pydantic.
-    """
-    module_name = getattr(method, "__module__", "")
-    # Debug logging
-    print(f"Checking method: {method.__name__}, module: {module_name}")
-    
-    # Explicitly exclude external libraries
-    external_prefixes = ("pydantic", "pydantic_settings", "builtins", "typing")
-
-    if any(module_name.startswith(prefix) for prefix in external_prefixes):
-        print(f"Excluding {method.__name__} due to external prefix")
-        return False
-    
-    result = module_name.startswith(PROJECT_NAMESPACE)
-    print(f"Method {method.__name__} is_user_defined: {result}")
-    return result
 
 def custom_class2md(cls: Any, generator) -> str:
     """Custom class documentation generator that includes property return types.
@@ -334,105 +313,9 @@ def _format_type_for_display(annotation) -> str:
     return str(annotation).replace('typing.', '')
 
 
-def generate_Pydantic_docstring(cls: Type[BaseSettings]) -> str:
-    """
-    Generate a Google-style class docstring with fields and user-defined methods only.
-
-    Args:
-        cls (Type[BaseSettings]): The Pydantic Settings class to document.
-
-    Returns:
-        str: A neatly formatted Google-style docstring.
-    """
-    # Get the class docstring
-    class_docstring = inspect.getdoc(cls) or "No description provided."
-    lines = [class_docstring, "", "Attributes:"]
-
-    # Determine fields to document (repr=True)
-    kept_field_names = {
-        name for name, field_info in cls.model_fields.items() if field_info.repr
-    }
-
-    # Accumulate field descriptions from parent classes if missing
-    field_docs = {}
-    for base_cls in cls.__mro__:
-        if not issubclass(base_cls, pydantic.BaseModel):
-            continue
-        for name, field_info in base_cls.model_fields.items():
-            if name in kept_field_names and name not in field_docs:
-                if field_info.description:
-                    field_docs[name] = field_info.description
-
-    # Get field descriptions and types, sorted alphabetically
-    for field_name in sorted(kept_field_names):
-        field_info = cls.model_fields[field_name]
-        field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
-        description = inspect.cleandoc(field_docs.get(field_name, "No description provided."))
-        print(f"Processing field: {field_name}, type: {field_type}, description: {description}")
-        print("Description for field:", description)
-        desc_lines = [line.strip() for line in description.splitlines() if line.strip()]
-
-        lines.append(f"- {field_name} ({field_type}): {desc_lines[0]}")
-        for extra_line in desc_lines[1:]:
-            lines.append(f"    {extra_line}")
-
-    # Document explicitly user-defined methods
-    methods_seen = set()
-    method_lines = [""]
-
-    print(f"\nProcessing methods for class: {cls.__name__}")
-    for base_cls in cls.__mro__:
-        if base_cls is object:
-            continue
-        print(f"\nChecking base class: {base_cls.__name__}")
-        # Get methods directly from class __dict__
-        for name, member in base_cls.__dict__.items():
-            print(f"\nExamining member: {name}")
-            print(f"Member type: {type(member)}")
-            # Skip private methods and already seen methods
-            if name.startswith("_") or name in methods_seen:
-                print(f"Skipping {name} - private or already seen")
-                continue
-            # Handle classmethod and staticmethod
-            func = None
-            if inspect.isfunction(member):
-                print(f"{name} is a function")
-                func = member
-            elif isinstance(member, classmethod):
-                print(f"{name} is a classmethod")
-                func = member.__func__
-            elif isinstance(member, staticmethod):
-                print(f"{name} is a staticmethod")
-                func = member.__func__
-            if func is None:
-                print(f"No function found for {name}")
-                continue
-            print(f"Function module: {getattr(func, '__module__', '')}")
-            if is_user_defined(func):
-                print(f"Adding {name} to documentation")
-                methods_seen.add(name)
-                signature = inspect.signature(func)
-                docstring = inspect.getdoc(func) or "No description provided."
-                cleaned_docstring = inspect.cleandoc(docstring).splitlines()
-
-                method_lines.append(f"### <kbd>method</kbd> `{name}`")
-                method_lines.append(f"```python\n{name}{signature}\n```")
-                method_lines.append(f"{cleaned_docstring[0]}")
-                for extra_line in cleaned_docstring[1:]:
-                    method_lines.append(f"    {extra_line}")
-            else:
-                print(f"Skipping {name} - not user defined")
-
-    if len(method_lines) > 2:
-        lines.extend(method_lines)
-
-    return "\n".join(lines)
-
-
-
 
 def create_markdown(docodile, generator):
-    """Create markdown file for the API.
+    """Create markdown file for Python object.
     
     Args:
         docodile (DocodileMaker): Docodile object.
@@ -441,8 +324,19 @@ def create_markdown(docodile, generator):
     """
     print("Opening file:", docodile.filename)
 
+    # Check if file exists, if it does, append the namespace to the filename.
+    # Check that it is not a duplicate already
+
+
+    if os.path.isfile(docodile.filename):
+        base, ext = os.path.splitext(docodile.filename)
+        new_filename = f"{base}_{docodile.module.__name__}{ext}"
+        print(f"File {docodile.filename} exists. Renaming to {new_filename}")
+        docodile._filename = new_filename
+
+
     with open(docodile.filename, 'w') as file:
-        file.write(add_frontmatter(docodile))
+        file.write(_add_frontmatter(docodile))
         file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
 
@@ -473,6 +367,7 @@ def check_temp_dir(temp_output_dir):
     """
     if not os.path.exists(temp_output_dir):
         os.makedirs(temp_output_dir)
+
 
 def get_api_list_from_init(file_path):
     """Get list of APIs from a Python __init__.py or .pyi file.
@@ -924,8 +819,6 @@ def _get_pydantic_user_methods_properties_classmethods(cls: Type[BaseModel]) -> 
     return methods
 
 
-
-
 def _parse_google_docstring(docstring: str) -> dict:
     """Parse a Google-style docstring into sections.
     
@@ -1032,7 +925,7 @@ def main(args):
 
     # Get list of APIs from the __init__ files for each namespace
     # and add to the SOURCE_DICT_COPY dictionary.
-    for k in list(SOURCE_DICT_COPY.keys()): # Returns key from configuration.py ['SDK', 'DATATYPE', 'LAUNCH_API', 'PUBLIC_API', 'AUTOMATIONS']
+    for k in list(SOURCE_DICT_COPY.keys()): # Returns key from configuration.py ['SDK', 'DATATYPE', 'PUBLIC_API', 'AUTOMATIONS']
 
         # Get the list of APIs from the __init__.py or .pyi file
         SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])
