@@ -23,19 +23,6 @@ def build_local_paths(root_directory):
         folder_name = config["hugo_specs"]["folder_name"]
         
         local_path = os.path.join(root_directory, folder_name)
-
-        # if key == "SDK":
-        #     # Place SDK files directly in the sdk directory, not in a subdirectory
-        #     local_path = root_directory
-        #     print(f"SDK directory: {local_path}")
-        # else:
-        #     local_path = os.path.join(root_directory, folder_name)
-        # elif key in ["DATATYPE", "CUSTOMCHARTS", "AUTOMATIONS"]:
-        #     # Place module in SDK Directory
-        #     local_path = os.path.join(sdk_dir, folder_name)
-        # else:
-        #     # Place other entries directly under root_directory
-        #     local_path = os.path.join(root_directory, folder_name)
             
         SOURCE_COPY[key]["hugo_specs"]["local_path"] = local_path
         print(f"Creating directory: {local_path}")
