@@ -65,6 +65,83 @@ def clean_filename(filename):
     return filename
 
 
+def clean_title(title):
+    """
+    Remove '_wandb' and everything after it from a title string.
+
+    Args:
+        title: The original title
+
+    Returns:
+        The cleaned title
+
+    Examples:
+        >>> clean_title("histogram_wandb.plot")
+        'histogram'
+        >>> clean_title("Api_wandb.apis.public")
+        'Api'
+    """
+    if '_wandb' in title:
+        return title.split('_wandb')[0]
+    return title
+
+
+def update_frontmatter_title(file_path, dry_run=False):
+    """
+    Update the title in the frontmatter of a markdown file.
+
+    Args:
+        file_path: Path to the markdown file
+        dry_run: If True, only print what would be changed
+
+    Returns:
+        True if the file was updated, False otherwise
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Check if file has frontmatter
+        if not content.startswith('---'):
+            return False
+
+        # Find the end of frontmatter
+        end_index = content.find('---', 3)
+        if end_index == -1:
+            return False
+
+        # Extract frontmatter
+        frontmatter_text = content[3:end_index].strip()
+        remaining_content = content[end_index:]
+
+        # Parse frontmatter
+        frontmatter = yaml.safe_load(frontmatter_text) or {}
+
+        # Check if there's a title to clean
+        if 'title' in frontmatter and '_wandb' in frontmatter['title']:
+            old_title = frontmatter['title']
+            new_title = clean_title(old_title)
+            frontmatter['title'] = new_title
+
+            if dry_run:
+                print(f"  Would update title: '{old_title}' -> '{new_title}'")
+                return False
+            else:
+                # Reconstruct the file with updated frontmatter
+                new_frontmatter = yaml.dump(frontmatter, default_flow_style=False, sort_keys=False)
+                new_content = f"---\n{new_frontmatter}---{remaining_content[3:]}"
+
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+
+                print(f"  Updated title: '{old_title}' -> '{new_title}'")
+                return True
+    except Exception as e:
+        print(f"  Error updating title in {file_path}: {e}")
+
+    return False
+
+
 def get_unique_filename(base_path):
     """
     Get a unique filename by appending numbers if necessary.
@@ -95,6 +172,7 @@ def get_unique_filename(base_path):
 def rename_markdown_files(directory, dry_run=False):
     """
     Rename all markdown files in a directory tree by removing '_wandb' and everything after.
+    Also updates the title in the frontmatter to remove '_wandb' and everything after.
     Handles conflicts by checking frontmatter and either deleting duplicates or appending numbers.
 
     Args:
@@ -107,11 +185,16 @@ def rename_markdown_files(directory, dry_run=False):
     directory = Path(directory)
     renamed_files = []
     deleted_files = []
+    titles_updated = 0
 
     # Find all markdown files recursively
     for md_file in directory.rglob('*.md'):
         old_name = md_file.name
         new_name = clean_filename(old_name)
+
+        # Update the title in frontmatter first (before renaming the file)
+        if update_frontmatter_title(md_file, dry_run):
+            titles_updated += 1
 
         # Only rename if the filename actually changed
         if old_name != new_name:
@@ -169,6 +252,9 @@ def rename_markdown_files(directory, dry_run=False):
 
     if deleted_files:
         print(f"\nTotal files {'that would be' if dry_run else ''} deleted as duplicates: {len(deleted_files)}")
+
+    if titles_updated > 0:
+        print(f"Total titles {'that would be' if dry_run else ''} updated: {titles_updated}")
 
     return renamed_files
 
