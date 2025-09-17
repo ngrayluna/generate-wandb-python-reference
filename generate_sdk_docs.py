@@ -236,7 +236,7 @@ def custom_class2md(cls: Any, generator) -> str:
                             if any(line.strip() for line in docstring_lines):
                                 enhanced_lines.append("")
                                 enhanced_lines.append("")
-                                enhanced_lines.append("**Returns:**")
+                                #enhanced_lines.append("**Returns:**")
                                 enhanced_lines.append(f" - `{return_type}`: The {prop_name} property value.")
                             
                             # We've already processed up to the separator, so continue from here
@@ -534,7 +534,7 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
         lines.append("")
     
     # Add Returns section
-    lines.append("**Returns:**")
+    #lines.append("**Returns:**")
     lines.append(f" An `{cls.__name__}` object.")
     lines.append("")
     
@@ -607,7 +607,7 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
                         if sig.return_annotation != inspect.Parameter.empty:
                             return_type = _format_type_for_display(sig.return_annotation)
                             lines.append("")
-                            lines.append("**Returns:**")
+                            #lines.append("**Returns:**")
                             lines.append(f" - `{return_type}`: The {method_name} property value.")
                     except (TypeError, ValueError):
                         pass  # If we can't get signature, just skip return type
@@ -631,7 +631,7 @@ def generate_google_style_pydantic_docstring(cls: Type[BaseModel]) -> str:
                     
                 # Add Returns section if present
                 if parsed_doc['returns']:
-                    lines.append("**Returns:**")
+                    #lines.append("**Returns:**")
                     lines.append(f" - {parsed_doc['returns']}")
                     lines.append("")
                     
