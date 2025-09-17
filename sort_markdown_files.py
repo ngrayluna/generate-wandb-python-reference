@@ -15,22 +15,10 @@ def build_local_paths(root_directory):
     """Create folders based on SOURCE and add local_path."""
     SOURCE_COPY = SOURCE.copy()
     
-    # First create the sdk directory
-    sdk_dir = os.path.join(root_directory, "sdk")
-    os.makedirs(sdk_dir, exist_ok=True)
-    
     for key, config in SOURCE_COPY.items():
         folder_name = config["hugo_specs"]["folder_name"]
         
-        if key == "SDK":
-            # Place SDK files directly in the sdk directory, not in a subdirectory
-            local_path = sdk_dir
-        elif key in ["DATATYPE", "CUSTOMCHARTS", "LAUNCH_API"]:
-            # Place module in SDK Directory
-            local_path = os.path.join(sdk_dir, folder_name)
-        else:
-            # Place other entries directly under root_directory
-            local_path = os.path.join(root_directory, folder_name)
+        local_path = os.path.join(root_directory, folder_name)
             
         SOURCE_COPY[key]["hugo_specs"]["local_path"] = local_path
         print(f"Creating directory: {local_path}")
@@ -39,10 +27,10 @@ def build_local_paths(root_directory):
     return SOURCE_COPY
 
 
-def create_object_type_lookup(source_dict):
-    """Map object_type values from frontmatter to SOURCE keys.
+def create_namespace_lookup(source_dict):
+    """Map "namespace" values from frontmatter to SOURCE keys.
     
-    Creates a reverse index from SOURCE dict mapping—where the "object_type"
+    Creates a reverse index from SOURCE dict mapping—where the ""namespace""
     value in the "frontmatter" is the key. E.g.
 
     "LAUNCH_API": {
@@ -51,14 +39,14 @@ def create_object_type_lookup(source_dict):
     "hugo_specs": {
         "title": "Launch Library",
         "description": "A collection of launch APIs for W&B.",
-        "frontmatter": "object_type: launch_apis_namespace",
+        "frontmatter": ""namespace": launch_apis_namespace",
         "folder_name": "launch-library",
     },
 
     This is a utility function that creates a dictionary mapping
-    object_type values found in the frontmatter to their corresponding
+    "namespace" values found in the frontmatter to their corresponding
     keys in the SOURCE dictionary. This allows for easy lookup when
-    sorting markdown files based on their object_type.
+    sorting markdown files based on their "namespace".
 
     Args:
         source_dict (dict): The SOURCE dictionary containing the configuration.
@@ -68,13 +56,13 @@ def create_object_type_lookup(source_dict):
     }
 
 def sort_markdown_files(source_directory, source_copy):
-    """Read markdown files, extract object_type, and sort them."""
+    """Read markdown files, extract "namespace", and sort them."""
 
-    # Create dictionary where the keys are object_type values from frontmatter
+    # Create dictionary where the keys are namespace values from frontmatter
     # and the values are the corresponding keys in the SOURCE dictionary
     # Returns something lke:
     # {'api': 'SDK', 'data-type': 'DATATYPE', 'public_apis_namespace': 'PUBLIC_API', 'launch_apis_namespace': 'LAUNCH_API'}
-    object_type_to_key = create_object_type_lookup(source_copy)
+    namespace_to_key = create_namespace_lookup(source_copy)
 
     # Create a set to keep track of directories created
     directories_created = []
@@ -84,14 +72,14 @@ def sort_markdown_files(source_directory, source_copy):
         # Get the frontmatter from the markdown file
         frontmatter = read_markdown_metadata(filepath)
 
-        object_type = frontmatter.get("object_type")
-        if not object_type:
-            print(f"Skipping {filepath}: No object_type in frontmatter.")
+        namespace = frontmatter.get("namespace")
+        if not namespace:
+            print(f"Skipping {filepath}: No namespace in frontmatter.")
             continue
 
-        source_key = object_type_to_key.get(object_type)
+        source_key = namespace_to_key.get(namespace)
         if not source_key:
-            print(f"Skipping {filepath}: Unknown object_type '{object_type}'.")
+            print(f"Skipping {filepath}: Unknown namespace '{namespace}'.")
             continue
 
         # Get the destination directory from the SOURCE dictionary
@@ -127,19 +115,27 @@ def read_markdown_metadata(filepath):
 
 def sort_functions_and_classes(filepath):
     """Sort functions and classes into their own directories."""
+
+    # Keep only the the root directory path
+    head, tail = os.path.split(filepath)
+
     # Create a new directory for functions and classes
-    functions_dir = os.path.join(os.getcwd(), filepath, "functions")
-    classes_dir = os.path.join(os.getcwd(), filepath, "classes")
+    functions_dir = os.path.join(os.getcwd(), head, "functions")
+    classes_dir = os.path.join(os.getcwd(), head, "experiments")
     os.makedirs(functions_dir, exist_ok=True)
     os.makedirs(classes_dir, exist_ok=True)
+
+    print(f"Sorting functions and classes in {filepath}")
+    print(f"Created directories: {functions_dir}, {classes_dir}")
 
     # Move the functions and classes into their respective directories
     for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
         frontmatter = read_markdown_metadata(filepath)
-        datatype = frontmatter.get("data_type_classification")
+        datatype = frontmatter.get("python_object_type")
         if not datatype:
-            print(f"Skipping {filepath}: No data_type_classification in frontmatter.")
+            print(f"Skipping {filepath}: No python_object_type in frontmatter.")
 
+        # Sort based on the datatype
         if "function" in datatype:
             shutil.move(filepath, functions_dir)
         elif "class" in datatype:
@@ -148,36 +144,39 @@ def sort_functions_and_classes(filepath):
     return
 
 
+def get_global_objects_path(source_copy, directories_created):
+    """Get the path where global classes and functions are stored.
+    
+    (i.e. wandb.wandb.__init__.py)
+    """
+    global_object_path = source_copy["SDK"]["hugo_specs"]["local_path"]
+    
+    # Find the sdk directory in the created directories
+    global_fun_root_path = None
+    for partial_path in directories_created:
+        if partial_path == global_object_path:
+            global_fun_root_path = partial_path
+            break
+    return global_fun_root_path
+
+
+
 def main(args):
     source_directory = args.source_directory
     root_directory = args.destination_directory
-
-    # Define the global module path. This has a list of legacy functions that we need to extract but don't advise using.
-    BASE_DIR = Path(__name__).resolve().parents[1] 
-    global_module_path = BASE_DIR / "wandb" / "wandb" / "sdk" / "lib" / "module.py"
 
     # Step 1: Build folder structure and local_path mapping
     source_copy = build_local_paths(root_directory)
 
     # Step 2: Sort markdown files based on frontmatter
-    # Returns a set of directories created
-    # Returns: {'python/sdk/data-type', 'python/automations', 'python/sdk/actions', ...}
+    # Returns dictionary: {'python/data-types', 'python/automations', 'python/global', ...}
     directories_created = sort_markdown_files(source_directory, source_copy)
 
-    # Grab whatever the directory "action" APIs are in
-    # Since SDK files are now placed directly in the sdk directory, look for that
-    sdk_path = source_copy["SDK"]["hugo_specs"]["local_path"]
-    
-    # Find the sdk directory in the created directories
-    global_fun_root_path = None
-    for partial_path in directories_created:
-        if partial_path == sdk_path:
-            global_fun_root_path = partial_path
-            break
-    print(f"Found global_dir_root: {global_fun_root_path}")
+    print(f"Directories created: {directories_created}")
 
     # Step 3: Sort functions and classes into their own directories
-    sort_functions_and_classes(global_fun_root_path)
+    sort_functions_and_classes(get_global_objects_path(source_copy, directories_created))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
