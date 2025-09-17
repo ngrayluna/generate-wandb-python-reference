@@ -927,7 +927,6 @@ def main(args):
     # and add to the SOURCE_DICT_COPY dictionary.
     for k in list(SOURCE_DICT_COPY.keys()): # Returns key from configuration.py ['SDK', 'DATATYPE', 'PUBLIC_API', 'AUTOMATIONS']
 
-        # Get the list of APIs from the __init__.py or .pyi file
         SOURCE_DICT_COPY[k]["apis_found"] = get_api_list_from_init(SOURCE_DICT_COPY[k]["file_path"])
 
         # Get the symbol to module mapping for each API
