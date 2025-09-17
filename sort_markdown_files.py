@@ -6,7 +6,6 @@ import glob
 import re
 import yaml
 import argparse
-import ast
 from pathlib import Path
 
 from configuration import SOURCE
@@ -22,14 +21,11 @@ def build_local_paths(root_directory):
     for key, config in SOURCE_COPY.items():
         folder_name = config["hugo_specs"]["folder_name"]
         
-        if key == "SDK":
-            # Place SDK files directly in the sdk directory, not in a subdirectory
-            local_path = sdk_dir
-        elif key in ["DATATYPE", "CUSTOMCHARTS", "LAUNCH_API"]:
-            # Place module in SDK Directory
+        if key in ["SDK", "ARTIFACT", "RUN", "SETTINGS", "DATATYPE", "CUSTOMCHARTS", "REPORTS", "WORKSPACES", "AUTOMATIONS"]:
+            # Place SDK-related items in SDK Directory
             local_path = os.path.join(sdk_dir, folder_name)
         else:
-            # Place other entries directly under root_directory
+            # Place other entries directly under root_directory (e.g., PUBLIC_API)
             local_path = os.path.join(root_directory, folder_name)
             
         SOURCE_COPY[key]["hugo_specs"]["local_path"] = local_path
@@ -127,23 +123,23 @@ def read_markdown_metadata(filepath):
 
 def sort_functions_and_classes(filepath):
     """Sort functions and classes into their own directories."""
-    # Create a new directory for functions and classes
-    functions_dir = os.path.join(os.getcwd(), filepath, "functions")
-    classes_dir = os.path.join(os.getcwd(), filepath, "classes")
-    os.makedirs(functions_dir, exist_ok=True)
-    os.makedirs(classes_dir, exist_ok=True)
-
-    # Move the functions and classes into their respective directories
-    for filepath in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
-        frontmatter = read_markdown_metadata(filepath)
+    # Don't sort if this is not the global-functions directory
+    if not filepath or not filepath.endswith("global-functions"):
+        print(f"Skipping function/class sorting for {filepath}")
+        return
+        
+    # For global-functions directory, we keep all functions directly in it
+    # No need to create subdirectories
+    print(f"Processing global functions directory: {filepath}")
+    
+    # Just verify that all files here are functions
+    for file in glob.glob(os.path.join(os.getcwd(), filepath, '*.md')):
+        frontmatter = read_markdown_metadata(file)
         datatype = frontmatter.get("data_type_classification")
-        if not datatype:
-            print(f"Skipping {filepath}: No data_type_classification in frontmatter.")
-
-        if "function" in datatype:
-            shutil.move(filepath, functions_dir)
-        elif "class" in datatype:
-            shutil.move(filepath, classes_dir)
+        if datatype and "function" in datatype:
+            print(f"  - Found function: {os.path.basename(file)}")
+        else:
+            print(f"  - Warning: Non-function file in global-functions: {os.path.basename(file)}")
 
     return
 
@@ -164,19 +160,11 @@ def main(args):
     # Returns: {'python/sdk/data-type', 'python/automations', 'python/sdk/actions', ...}
     directories_created = sort_markdown_files(source_directory, source_copy)
 
-    # Grab whatever the directory "action" APIs are in
-    # Since SDK files are now placed directly in the sdk directory, look for that
-    sdk_path = source_copy["SDK"]["hugo_specs"]["local_path"]
-    
-    # Find the sdk directory in the created directories
-    global_fun_root_path = None
-    for partial_path in directories_created:
-        if partial_path == sdk_path:
-            global_fun_root_path = partial_path
-            break
-    print(f"Found global_dir_root: {global_fun_root_path}")
+    # Find the global-functions directory path
+    global_fun_root_path = source_copy["SDK"]["hugo_specs"]["local_path"]
+    print(f"Found global-functions directory: {global_fun_root_path}")
 
-    # Step 3: Sort functions and classes into their own directories
+    # Step 3: Process global functions directory (no longer sorting into subdirectories)
     sort_functions_and_classes(global_fun_root_path)
 
 if __name__ == "__main__":

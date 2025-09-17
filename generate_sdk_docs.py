@@ -4,7 +4,7 @@ import os
 import re
 import inspect
 import argparse
-import importlib  # make sure this is at the top
+import importlib
 from inspect import isclass, isfunction, ismodule
 
 from lazydocs import MarkdownGenerator
@@ -22,14 +22,23 @@ from pathlib import Path
 # Path to the local version of the `wandb` package
 BASE_DIR = Path(__name__).resolve().parents[1] 
 local_wandb_path = BASE_DIR / "wandb"
+local_wandb_workspaces_path = BASE_DIR / "wandb-workspaces"
 
-# Add the local package path to sys.path
+# Add the local package paths to sys.path
 sys.path.insert(0, str(local_wandb_path))
+sys.path.insert(0, str(local_wandb_workspaces_path))
 
 # Confirm the correct version of wandb is being used
 import wandb
 print("Using wandb from:", wandb.__file__)
 print("Wandb version:", wandb.__version__)
+
+# Try to import wandb_workspaces if available
+try:
+    import wandb_workspaces
+    print("Using wandb_workspaces from:", wandb_workspaces.__file__)
+except ImportError:
+    print("wandb_workspaces not found - Reports and Workspaces docs will not be generated")
 ###### END ######
 
 
@@ -122,24 +131,54 @@ def _title_key_string(docodile):
     else:
         return f"title: {base_name}\n"
 
-def _type_key_string(docodile):
-    """Checks the filepath and checks for substrings (e.g. "sdk", "data_type").
+# Type determination rules - cleaner approach using a list of rules
+# Each rule is a tuple of (matcher_function, source_key)
+TYPE_DETERMINATION_RULES = [
+    # Specific class checks (must be classes, not functions)
+    (lambda d: d.api_item == "Run" and d.object_type == "class", "RUN"),
+    (lambda d: d.api_item == "Settings" and d.object_type == "class" and "wandb_settings" in d.getfile_path, "SETTINGS"),
+    (lambda d: "artifact" in d.getfile_path.lower() and ("Artifact" in d.api_item or "artifact.py" in d.getfile_path) and d.object_type == "class", "ARTIFACT"),
     
-    Based on substring, determine the type of the object. Return the
-    appropriate frontmatter string with the determined type.
+    # Workspaces-related checks
+    (lambda d: "wandb_workspaces" in d.getfile_path and "reports" in d.getfile_path, "REPORTS"),
+    (lambda d: "wandb_workspaces" in d.getfile_path and "workspaces" in d.getfile_path, "WORKSPACES"),
+    
+    # Path-based checks
+    (lambda d: "sdk" in d.getfile_path and "data_type" in d.getfile_path, "DATATYPE"),
+    (lambda d: "apis" in d.getfile_path and "public" in d.getfile_path, "PUBLIC_API"),
+    (lambda d: "launch" in d.getfile_path and "LAUNCH_API" in SOURCE, "LAUNCH_API"),
+    (lambda d: "automations" in d.getfile_path, "AUTOMATIONS"),
+    (lambda d: "plot" in d.getfile_path, "CUSTOMCHARTS"),
+]
+
+def _type_key_string(docodile):
+    """Determine the type of the object and return the appropriate frontmatter.
+    
+    Uses a rule-based approach to determine which SOURCE category an object
+    belongs to based on its file path, API item name, and object type.
+    
+    Args:
+        docodile: DocodileMaker object containing file path, API item, and object type
+        
+    Returns:
+        str: The frontmatter string for the determined type
     """
-    if "sdk" and "data_type" in docodile.getfile_path: # Careful with data-type and data_type
-        return SOURCE["DATATYPE"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "apis" and "public" in docodile.getfile_path:
-        return SOURCE["PUBLIC_API"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "launch" in docodile.getfile_path:
-        return SOURCE["LAUNCH_API"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "automations" in docodile.getfile_path:
-        return SOURCE["AUTOMATIONS"]["hugo_specs"]["frontmatter"] + "\n"
-    elif "plot" in docodile.getfile_path:
-        return SOURCE["CUSTOMCHARTS"]["hugo_specs"]["frontmatter"] + "\n"
-    else:
-        return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
+    # Note: file_path, api_item, and object_type are accessed via docodile in lambda functions
+    
+    # Apply rules in order - first match wins
+    for matcher, source_key in TYPE_DETERMINATION_RULES:
+        try:
+            if matcher(docodile):
+                # Handle LAUNCH_API which might not exist
+                if source_key == "LAUNCH_API":
+                    return SOURCE.get(source_key, SOURCE["SDK"])["hugo_specs"]["frontmatter"] + "\n"
+                return SOURCE[source_key]["hugo_specs"]["frontmatter"] + "\n"
+        except (KeyError, AttributeError):
+            # Skip rules that fail due to missing attributes
+            continue
+    
+    # Default to SDK if no rules match
+    return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
  
 
 def add_frontmatter(docodile):
