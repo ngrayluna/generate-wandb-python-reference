@@ -173,6 +173,55 @@ def rename_markdown_files(directory, dry_run=False):
     return renamed_files
 
 
+def add_public_apis_admonition(directory='python/public-api'):
+    """
+    Add public API admonition to markdown files in the public-apis directory.
+
+    Args:
+        directory: Path to the public-apis directory
+    """
+    directory = Path(directory)
+    if not directory.exists():
+        print(f"Directory {directory} does not exist")
+        return
+
+    admonition = "{{< readfile file=\"/_includes/public-api-use.md\" >}}\n\n"
+    files_updated = 0
+
+    # Process all markdown files in the directory
+    for md_file in directory.rglob('*.md'):
+        try:
+            with open(md_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Check if file has frontmatter
+            if content.startswith('---'):
+                # Find the end of frontmatter
+                end_index = content.find('---', 3)
+                if end_index != -1:
+                    # Insert admonition after frontmatter
+                    end_of_frontmatter = content.find('\n', end_index) + 1
+                    new_content = content[:end_of_frontmatter] + admonition + content[end_of_frontmatter:]
+                else:
+                    # No closing frontmatter, add at beginning
+                    new_content = admonition + content
+            else:
+                # No frontmatter, add at beginning
+                new_content = admonition + content
+
+            # Write back the updated content
+            with open(md_file, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+
+            files_updated += 1
+            print(f"Added admonition to: {md_file}")
+
+        except Exception as e:
+            print(f"Error processing {md_file}: {e}")
+
+    print(f"Total files updated: {files_updated}")
+
+
 def delete_empty_directories(root_directory):
     """Delete empty directories in the root directory."""
     for dirpath, dirnames, filenames in os.walk(root_directory, topdown=False):
@@ -221,6 +270,10 @@ def main():
     if not args.skip_empty_cleanup and not args.dry_run:
         print("\nCleaning up empty directories...")
         delete_empty_directories(args.directory)
+
+    # Add public API admonition
+    print("\nAdding public API admonitions...")
+    add_public_apis_admonition(directory=os.path.join(args.directory, 'public-api'))
 
     return 0
 
