@@ -15,8 +15,7 @@ def build_page_content_from_source():
         folder = value["hugo_specs"]["folder_name"]
         title = value["hugo_specs"].get("title", folder.replace("-", " ").title())
         description = value["hugo_specs"].get("description", "No description available.")
-        weight = value["hugo_specs"].get("weight", 0)
-        content[folder] = {"title": title, "module": module, "description": description, "weight": weight}
+        content[folder] = {"title": title, "module": module, "description": description}
     return content
 
 
@@ -42,13 +41,6 @@ def create_markdown_index_page(root_directory):
         title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").replace("_", " ").title())
         description = page_content.get(dir_name, {}).get("description", "")
         module_name = page_content.get(dir_name, {}).get("module", "")
-        
-        if title == "Classes":
-            weight = 30
-        elif title == "Functions":
-            weight = 20
-        else:
-            weight = page_content.get(dir_name, {}).get("weight", 0)
 
         index_file = os.path.join(dirpath, "_index.md")
         # Check if the directory name contains "sdk" and adjust the title accordingly
@@ -59,7 +51,6 @@ def create_markdown_index_page(root_directory):
             with open(index_file, 'w') as file:
                 file.write(f"---\ntitle: {title}\n")
                 file.write(f"module: {module_name}\n")
-                file.write(f"weight: {weight}\n")
                 file.write("---\n")
                 file.write(f"{description}\n")
 
@@ -71,13 +62,10 @@ def create_python_sdk_index_file(filepath,dir_name, page_content):
 
     title = page_content.get(dir_name, {}).get("title", dir_name.replace("-", " ").title())
     module_name = page_content.get(dir_name, {}).get("module", "")
-    weight = page_content.get(dir_name, {}).get("weight", 10) 
 
     with open(filepath, 'w') as file:
         file.write(f"---\ntitle: {title.upper()}\n")
         file.write(f"module: {module_name}\n")
-        file.write(f"weight: {weight}\n")
-        file.write("no_list: true\n")
         file.write("---\n")
         file.write(manual_description)
     return

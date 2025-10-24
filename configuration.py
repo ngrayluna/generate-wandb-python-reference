@@ -11,7 +11,6 @@ SOURCE = {
             "description": "Use during training to log experiments, track metrics, and save model artifacts.",
             "frontmatter": "namespace: python_sdk_actions",
             "folder_name": "global",
-            "weight": 10,
         },
     },
     "CUSTOMCHARTS": {
@@ -22,7 +21,6 @@ SOURCE = {
             "description": "Create custom charts and visualizations.",
             "frontmatter": "namespace: python_sdk_custom_charts",
             "folder_name": "custom-charts",
-            "weight": 80,
         },
     },    
     "DATATYPE": {
@@ -33,7 +31,6 @@ SOURCE = {
             "description": "Defines Data Types for logging interactive visualizations to W&B.",
             "frontmatter": "namespace: python_sdk_data_type",
             "folder_name": "data-types",
-            "weight": 70,
         },
     },    
     "PUBLIC_API": {
@@ -44,7 +41,6 @@ SOURCE = {
             "description": "Query and analyze data logged to W&B.",
             "frontmatter": "namespace: public_apis_namespace",
             "folder_name": "public-api",
-            "weight": 90,
         },
     },
     "AUTOMATIONS": {
@@ -55,7 +51,6 @@ SOURCE = {
             "description": "Automate your W&B workflows.",
             "frontmatter": "namespace: automations_namespace",
             "folder_name": "automations",
-            "weight": 100,
         },
     },
 }
