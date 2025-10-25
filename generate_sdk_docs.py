@@ -337,7 +337,7 @@ def create_markdown(docodile, generator):
 
     with open(docodile.filename, 'w') as file:
         file.write(_add_frontmatter(docodile))
-        file.write(format_github_button(docodile.getfile_path))
+        #file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
 
         if docodile.object_type == "class" and docodile.isPydantic:
