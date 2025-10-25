@@ -3,6 +3,7 @@
 Post-process markdown files to remove '_wandb' and everything after it from filenames.
 _wandb is added by LazyDocs to avoid conflicts during generation.
 Also includes function to delete empty directories.
+Converts .md files to .mdx files if specified. By default, this conversion is enabled.
 """
 
 import os
