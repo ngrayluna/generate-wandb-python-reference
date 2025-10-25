@@ -3,6 +3,7 @@
 Post-process markdown files to remove '_wandb' and everything after it from filenames.
 _wandb is added by LazyDocs to avoid conflicts during generation.
 Also includes function to delete empty directories.
+Converts .md files to .mdx files if specified. By default, this conversion is enabled.
 """
 
 import os
@@ -169,15 +170,17 @@ def get_unique_filename(base_path):
         counter += 1
 
 
-def rename_markdown_files(directory, dry_run=False):
+def rename_markdown_files(directory, dry_run=False, convert_to_mdx=False):
     """
     Rename all markdown files in a directory tree by removing '_wandb' and everything after.
     Also updates the title in the frontmatter to remove '_wandb' and everything after.
     Handles conflicts by checking frontmatter and either deleting duplicates or appending numbers.
+    Optionally converts .md extensions to .mdx in the same pass.
 
     Args:
         directory: Path to the directory to process
         dry_run: If True, only print what would be renamed without actually renaming
+        convert_to_mdx: If True, convert .md extensions to .mdx after other renaming
 
     Returns:
         List of tuples (old_path, new_path) for renamed files
@@ -196,11 +199,16 @@ def rename_markdown_files(directory, dry_run=False):
         if update_frontmatter_title(md_file, dry_run):
             titles_updated += 1
 
-        # Only rename if the filename actually changed
-        if old_name != new_name:
-            old_path = md_file
-            new_path = md_file.parent / new_name
+        # Determine if we need to rename the file
+        old_path = md_file
+        new_path = md_file.parent / new_name
 
+        # Apply .mdx conversion if requested
+        if convert_to_mdx:
+            new_path = new_path.with_suffix('.mdx')
+
+        # Only rename if the path actually changed (filename or extension)
+        if old_path != new_path:
             if dry_run:
                 if new_path.exists():
                     # Check frontmatter to determine action
@@ -335,6 +343,12 @@ def main():
         action='store_true',
         help='Skip deletion of empty directories'
     )
+    parser.add_argument(
+        '--convert-to-mdx',
+        action='store_true',
+        default=True,
+        help='Convert .md extensions to .mdx'
+    )
 
     args = parser.parse_args()
 
@@ -344,10 +358,11 @@ def main():
 
     print(f"Processing directory: {args.directory}")
     print(f"Dry run: {args.dry_run}")
+    print(f"Convert to MDX: {args.convert_to_mdx}")
     print()
 
-    # Rename markdown files
-    renamed_files = rename_markdown_files(args.directory, args.dry_run)
+    # Rename markdown files (and optionally convert to .mdx)
+    renamed_files = rename_markdown_files(args.directory, args.dry_run, args.convert_to_mdx)
 
     print()
     print(f"Total files {'that would be' if args.dry_run else ''} renamed: {len(renamed_files)}")
