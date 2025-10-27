@@ -10,10 +10,10 @@ This script validates that:
 
 import argparse
 import json
+import logging
 import shutil
-from typing import Dict, List, Set, Optional
+from typing import Dict, List, Set, Optional, Tuple
 from datetime import datetime
-from pathlib import Path
 
 # Configuration constants
 DOCS_JSON_PREFIX = "models/ref/"
@@ -23,6 +23,23 @@ DEFAULT_OUTPUT_REPORT = "mdx_docsjson_validation_report.json"
 SEPARATOR = "=" * 70
 EN_LANGUAGE = "en"
 PYTHON_GROUP = "Python"
+
+# Path segment to group name mappings (from configuration.py SOURCE)
+PATH_SEGMENT_TO_GROUP = {
+    "custom-charts": "Custom Charts",
+    "data-types": "Data Types",
+    "public-api": "Query API",
+    "automations": "Automations",
+    "functions": "Global Functions",
+    "experiments": "Experiments",
+}
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 def load_mdx_file_list(filepath: str = DEFAULT_MDX_FILE_LIST) -> List[str]:
@@ -122,7 +139,7 @@ def normalize_docsjson_path(docs_path: str) -> str:
 
 def create_backup(filepath: str) -> str:
     """
-    Create a backup of the specified file.
+    Create a timestamped backup of the specified file.
 
     Args:
         filepath: Path to file to backup
@@ -130,9 +147,10 @@ def create_backup(filepath: str) -> str:
     Returns:
         Path to backup file
     """
-    backup_path = f"{filepath}.backup"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = f"{filepath}.backup_{timestamp}"
     shutil.copy2(filepath, backup_path)
-    print(f"📦 Creating backup: {backup_path} ✓")
+    logger.info(f"📦 Creating backup: {backup_path} ✓")
     return backup_path
 
 
@@ -146,21 +164,11 @@ def path_segment_to_group_name(segment: str) -> str:
     Returns:
         Group name (e.g., 'Automations', 'Data Types')
     """
-    # Handle special cases
-    if segment == "data-types":
-        return "Data Types"
-    elif segment == "custom-charts":
-        return "Custom Charts"
-    elif segment == "public-api":
-        return "Public API"
-    elif segment == "functions":
-        return "Global Functions"
-
-    # Default: capitalize first letter
-    return segment.capitalize()
+    # Use mapping from configuration, fallback to capitalized segment
+    return PATH_SEGMENT_TO_GROUP.get(segment, segment.capitalize())
 
 
-def mdx_path_to_group_and_page(mdx_path: str) -> tuple[Optional[str], str]:
+def mdx_path_to_group_and_page(mdx_path: str) -> Tuple[Optional[str], str]:
     """
     Extract group name and page path from MDX file path.
 
@@ -254,7 +262,7 @@ def update_docs_json_with_missing_pages(
         Dictionary mapping group names to lists of added pages
     """
     if not missing_mdx_files:
-        print("\n✓ No pages to add to docs.json")
+        logger.info("\n✓ No pages to add to docs.json")
         return {}
 
     # Create backup
@@ -267,7 +275,7 @@ def update_docs_json_with_missing_pages(
     # Track additions by group
     additions = {}
 
-    print(f"\n📝 Processing {len(missing_mdx_files)} missing page(s)...\n")
+    logger.info(f"\n📝 Processing {len(missing_mdx_files)} missing page(s)...\n")
 
     # Find English language section
     languages = docs_data.get("navigation", {}).get("languages", [])
@@ -278,7 +286,7 @@ def update_docs_json_with_missing_pages(
             break
 
     if not en_data:
-        print("❌ Error: Could not find 'en' language section in docs.json")
+        logger.error("❌ Error: Could not find 'en' language section in docs.json")
         return additions
 
     # Process each missing file
@@ -286,10 +294,10 @@ def update_docs_json_with_missing_pages(
         group_name, docs_json_page = mdx_path_to_group_and_page(mdx_file)
 
         if not group_name:
-            print(f"⚠️  Skipping {mdx_file}: Could not determine group")
+            logger.warning(f"⚠️  Skipping {mdx_file}: Could not determine group")
             continue
 
-        print(f"  {group_name}: {mdx_file}")
+        logger.info(f"  {group_name}: {mdx_file}")
 
         # Try to add to the group
         added = False
@@ -304,17 +312,17 @@ def update_docs_json_with_missing_pages(
                 additions[group_name] = []
             additions[group_name].append(docs_json_page)
         else:
-            print(f"    ⚠️  Warning: Could not find '{group_name}' group in docs.json")
+            logger.warning(f"    ⚠️  Warning: Could not find '{group_name}' group in docs.json")
 
     # Save updated docs.json
     if additions:
         with open(docs_json_path, 'w', encoding='utf-8') as f:
             json.dump(docs_data, f, indent=2)
 
-        print(f"\n✅ Updated docs.json with {sum(len(pages) for pages in additions.values())} new page(s)")
-        print(f"\nPages added by group:")
+        logger.info(f"\n✅ Updated docs.json with {sum(len(pages) for pages in additions.values())} new page(s)")
+        logger.info(f"\nPages added by group:")
         for group_name, pages in sorted(additions.items()):
-            print(f"  {group_name}: {len(pages)} page(s)")
+            logger.info(f"  {group_name}: {len(pages)} page(s)")
 
     return additions
 
@@ -326,18 +334,18 @@ def check_mdx_vs_docsjson() -> Dict:
     Returns:
         Dictionary containing validation results with counts and detailed lists
     """
-    print("Loading MDX file list...")
+    logger.info("Loading MDX file list...")
     mdx_files = load_mdx_file_list()
 
-    print("Parsing docs.json for Python group entries...")
+    logger.info("Parsing docs.json for Python group entries...")
     docs_pages = extract_python_pages_from_docs()
 
     # Convert docs.json pages to MDX path format
     docs_as_mdx = {normalize_docsjson_path(page) for page in docs_pages}
 
-    print(f"\nFound {len(mdx_files)} files in MDX list")
-    print(f"Found {len(docs_as_mdx)} pages in docs.json Python group")
-    print(f"\n{SEPARATOR}")
+    logger.info(f"\nFound {len(mdx_files)} files in MDX list")
+    logger.info(f"Found {len(docs_as_mdx)} pages in docs.json Python group")
+    logger.info(f"\n{SEPARATOR}")
 
     # Create normalized lookup dictionaries for case-insensitive comparison
     mdx_normalized = {f.lower(): f for f in mdx_files}
@@ -389,46 +397,46 @@ def print_results(results: Dict) -> None:
     """
     summary = results["summary"]
 
-    print("\n📊 VALIDATION SUMMARY")
-    print(SEPARATOR)
-    print(f"MDX files in list:              {summary['mdx_file_count']}")
-    print(f"Docs.json Python pages:         {summary['docsjson_page_count']}")
-    print(f"MDX files not in docs.json:     {summary['mdx_only_count']}")
-    print(f"Case/naming mismatches:         {summary['case_mismatch_count']}")
-    print(f"Docs.json entries not in MDX:   {summary['docs_only_count']} (informational)")
+    logger.info("\n📊 VALIDATION SUMMARY")
+    logger.info(SEPARATOR)
+    logger.info(f"MDX files in list:              {summary['mdx_file_count']}")
+    logger.info(f"Docs.json Python pages:         {summary['docsjson_page_count']}")
+    logger.info(f"MDX files not in docs.json:     {summary['mdx_only_count']}")
+    logger.info(f"Case/naming mismatches:         {summary['case_mismatch_count']}")
+    logger.info(f"Docs.json entries not in MDX:   {summary['docs_only_count']} (informational)")
 
     # Print MDX files not in docs.json
     if results["mdx_files_not_in_docsjson"]:
-        print("\n❌ MDX FILES NOT IN DOCS.JSON:")
-        print(SEPARATOR)
+        logger.info("\n❌ MDX FILES NOT IN DOCS.JSON:")
+        logger.info(SEPARATOR)
         for mdx_file in results["mdx_files_not_in_docsjson"]:
-            print(f"  - {mdx_file}")
+            logger.info(f"  - {mdx_file}")
 
     # Print case mismatches
     if results["case_naming_mismatches"]:
-        print("\n⚠️  CASE/NAMING MISMATCHES (not auto-fixed):")
-        print(SEPARATOR)
-        print("These pages exist in both locations but with different casing.")
-        print("Manual review recommended.\n")
+        logger.warning("\n⚠️  CASE/NAMING MISMATCHES (not auto-fixed):")
+        logger.info(SEPARATOR)
+        logger.info("These pages exist in both locations but with different casing.")
+        logger.info("Manual review recommended.\n")
         for mismatch in results["case_naming_mismatches"]:
-            print(f"  MDX:  {mismatch['mdx_path']}")
-            print(f"  Docs: {mismatch['docs_path']}")
-            print()
+            logger.info(f"  MDX:  {mismatch['mdx_path']}")
+            logger.info(f"  Docs: {mismatch['docs_path']}")
+            logger.info("")
 
     # Print docs.json entries not in MDX (informational)
     if results["docsjson_entries_not_in_mdx"]:
-        print("\nℹ️  DOCS.JSON ENTRIES NOT IN MDX LIST (informational):")
-        print(SEPARATOR)
+        logger.info("\nℹ️  DOCS.JSON ENTRIES NOT IN MDX LIST (informational):")
+        logger.info(SEPARATOR)
         for docs_file in results["docsjson_entries_not_in_mdx"]:
-            print(f"  - {docs_file}")
+            logger.info(f"  - {docs_file}")
 
     # Final status
-    print(f"\n{SEPARATOR}")
+    logger.info(f"\n{SEPARATOR}")
     if summary['mdx_only_count'] == 0 and summary['case_mismatch_count'] == 0:
-        print("✅ VALIDATION PASSED: All checks successful!")
+        logger.info("✅ VALIDATION PASSED: All checks successful!")
     else:
-        print("❌ VALIDATION FAILED: Issues found (see above)")
-    print(SEPARATOR)
+        logger.error("❌ VALIDATION FAILED: Issues found (see above)")
+    logger.info(SEPARATOR)
 
 
 def save_json_report(results: Dict, output_path: str = DEFAULT_OUTPUT_REPORT) -> None:
@@ -441,7 +449,7 @@ def save_json_report(results: Dict, output_path: str = DEFAULT_OUTPUT_REPORT) ->
     """
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
-    print(f"\n📄 JSON report saved to: {output_path}")
+    logger.info(f"\n📄 JSON report saved to: {output_path}")
 
 
 def main(args) -> None:
@@ -464,36 +472,36 @@ def main(args) -> None:
 
         # Update docs.json if requested and there are missing pages
         if args.update and mdx_only:
-            print(f"\n{SEPARATOR}")
-            print("🔄 UPDATING DOCS.JSON")
-            print(SEPARATOR)
+            logger.info(f"\n{SEPARATOR}")
+            logger.info("🔄 UPDATING DOCS.JSON")
+            logger.info(SEPARATOR)
             additions = update_docs_json_with_missing_pages(mdx_only)
 
             if additions:
-                print(f"\n{SEPARATOR}")
-                print("✅ Update complete! Re-run script to verify.")
-                print(SEPARATOR)
+                logger.info(f"\n{SEPARATOR}")
+                logger.info("✅ Update complete! Re-run script to verify.")
+                logger.info(SEPARATOR)
         elif not args.update and mdx_only:
-            print(f"\n💡 Tip: Run with --update to automatically add missing pages to docs.json")
+            logger.info(f"\n💡 Tip: Run with --update to automatically add missing pages to docs.json")
 
         # Exit with error code if validation issues remain
-        # (case mismatches still count as issues since they're not auto-fixed)
-        if summary["case_mismatch_count"] > 0:
+        # (case mismatches and missing MDX files count as issues)
+        if summary["case_mismatch_count"] > 0 or summary["mdx_only_count"] > 0:
             exit(1)
 
     except FileNotFoundError as e:
-        print(f"❌ Error: File not found - {e}")
+        logger.error(f"❌ Error: File not found - {e}")
         exit(1)
     except json.JSONDecodeError as e:
-        print(f"❌ Error: Invalid JSON - {e}")
+        logger.error(f"❌ Error: Invalid JSON - {e}")
         exit(1)
     except ValueError as e:
-        print(f"❌ Error: {e}")
+        logger.error(f"❌ Error: {e}")
         exit(1)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--update", action="store_true", default=True, help="Only generate report, don't update docs.json")
+    parser.add_argument("--update", action="store_true", help="Update docs.json with missing pages (default: report only)")
     args = parser.parse_args()
     main(args)
