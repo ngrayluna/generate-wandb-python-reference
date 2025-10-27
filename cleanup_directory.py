@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import argparse
 import yaml
+import json
 
 
 def extract_frontmatter(file_path):
@@ -324,6 +325,26 @@ def delete_empty_directories(root_directory):
             os.rmdir(dirpath)
 
 
+def create_mdx_file_list(renamed_files):
+    """
+    Extract and create list of only the .mdx files from the renamed_files list.
+
+    Args:
+        renamed_files: List of tuples (old_path, new_path) for renamed files
+
+    Returns:
+        List of relative paths for .mdx files
+    """
+    mdx_files = []
+
+    for old_path, new_path in renamed_files:
+        # Check if the new file has .mdx extension
+        if new_path.endswith('.mdx'):
+            mdx_files.append(new_path)
+
+    return sorted(mdx_files)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Remove "_wandb" and everything after from markdown filenames and clean up empty directories'
@@ -376,8 +397,12 @@ def main():
     print("\nAdding public API admonitions...")
     add_public_apis_admonition(directory=os.path.join(args.directory, 'public-api'))
 
-    return 0
+    # Extract and output .mdx files as JSON
+    mdx_files = create_mdx_file_list(renamed_files)
 
+    # Output to JSON and text files
+    with open('mdx_file_list.json', 'w') as f:
+        json.dump(mdx_files, f, indent=2)
 
 if __name__ == '__main__':
     exit(main())
