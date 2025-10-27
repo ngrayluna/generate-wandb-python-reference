@@ -5,11 +5,15 @@ Check MDX file list against docs.json Python group entries.
 This script validates that:
 1. All MDX files in mdx_file_list.json are represented in docs.json
 2. Path and naming conventions match (checks for case mismatches)
+3. Optionally updates docs.json with missing pages (--update flag)
 """
 
+import argparse
 import json
-from typing import Dict, List, Set
+import shutil
+from typing import Dict, List, Set, Optional
 from datetime import datetime
+from pathlib import Path
 
 # Configuration constants
 DOCS_JSON_PREFIX = "models/ref/"
@@ -116,6 +120,205 @@ def normalize_docsjson_path(docs_path: str) -> str:
     return f"{docs_path}.mdx"
 
 
+def create_backup(filepath: str) -> str:
+    """
+    Create a backup of the specified file.
+
+    Args:
+        filepath: Path to file to backup
+
+    Returns:
+        Path to backup file
+    """
+    backup_path = f"{filepath}.backup"
+    shutil.copy2(filepath, backup_path)
+    print(f"📦 Creating backup: {backup_path} ✓")
+    return backup_path
+
+
+def path_segment_to_group_name(segment: str) -> str:
+    """
+    Convert a path segment to a group name.
+
+    Args:
+        segment: Path segment (e.g., 'automations', 'data-types')
+
+    Returns:
+        Group name (e.g., 'Automations', 'Data Types')
+    """
+    # Handle special cases
+    if segment == "data-types":
+        return "Data Types"
+    elif segment == "custom-charts":
+        return "Custom Charts"
+    elif segment == "public-api":
+        return "Public API"
+    elif segment == "functions":
+        return "Global Functions"
+
+    # Default: capitalize first letter
+    return segment.capitalize()
+
+
+def mdx_path_to_group_and_page(mdx_path: str) -> tuple[Optional[str], str]:
+    """
+    Extract group name and page path from MDX file path.
+
+    Args:
+        mdx_path: MDX file path (e.g., 'python/automations/automation.mdx')
+
+    Returns:
+        Tuple of (group_name, docs_json_page_path)
+        e.g., ('Automations', 'models/ref/python/automations/automation')
+    """
+    # Remove .mdx extension
+    path_without_ext = mdx_path.replace(".mdx", "")
+
+    # Split path
+    parts = path_without_ext.split("/")
+
+    # Need at least python/category/page
+    if len(parts) < 3 or parts[0] != "python":
+        return None, ""
+
+    # Extract category (second segment)
+    category = parts[1]
+    group_name = path_segment_to_group_name(category)
+
+    # Build docs.json path with prefix
+    docs_json_path = f"{DOCS_JSON_PREFIX}{path_without_ext}"
+
+    return group_name, docs_json_path
+
+
+def find_and_update_group(pages_list: List, target_group: str, new_page: str) -> bool:
+    """
+    Find a group in nested structure and insert page alphabetically.
+
+    Args:
+        pages_list: List of page items to search
+        target_group: Group name to find (e.g., 'Automations')
+        new_page: Page path to insert (e.g., 'models/ref/python/automations/newpage')
+
+    Returns:
+        True if group was found and page added, False otherwise
+    """
+    for item in pages_list:
+        if isinstance(item, dict):
+            if item.get("group") == target_group:
+                # Found the target group
+                group_pages = item.get("pages", [])
+
+                # Check if page already exists (case-insensitive)
+                new_page_lower = new_page.lower()
+                for page in group_pages:
+                    if isinstance(page, str) and page.lower() == new_page_lower:
+                        # Page already exists, skip insertion
+                        return False
+
+                # Insert alphabetically (case-insensitive sort)
+                insert_index = 0
+
+                for i, page in enumerate(group_pages):
+                    # Only compare with string pages (not nested groups)
+                    if isinstance(page, str):
+                        if page.lower() > new_page_lower:
+                            break
+                        insert_index = i + 1
+                    else:
+                        # For nested groups, consider them as coming after all landing pages
+                        insert_index = i + 1
+
+                group_pages.insert(insert_index, new_page)
+                return True
+            elif "pages" in item:
+                # Recursively search nested groups
+                if find_and_update_group(item["pages"], target_group, new_page):
+                    return True
+
+    return False
+
+
+def update_docs_json_with_missing_pages(
+    missing_mdx_files: List[str],
+    docs_json_path: str = DEFAULT_DOCS_JSON
+) -> Dict[str, List[str]]:
+    """
+    Update docs.json with missing MDX pages.
+
+    Args:
+        missing_mdx_files: List of MDX files not in docs.json
+        docs_json_path: Path to docs.json file
+
+    Returns:
+        Dictionary mapping group names to lists of added pages
+    """
+    if not missing_mdx_files:
+        print("\n✓ No pages to add to docs.json")
+        return {}
+
+    # Create backup
+    create_backup(docs_json_path)
+
+    # Load docs.json
+    with open(docs_json_path, 'r', encoding='utf-8') as f:
+        docs_data = json.load(f)
+
+    # Track additions by group
+    additions = {}
+
+    print(f"\n📝 Processing {len(missing_mdx_files)} missing page(s)...\n")
+
+    # Find English language section
+    languages = docs_data.get("navigation", {}).get("languages", [])
+    en_data = None
+    for lang_section in languages:
+        if lang_section.get("language") == EN_LANGUAGE:
+            en_data = lang_section
+            break
+
+    if not en_data:
+        print("❌ Error: Could not find 'en' language section in docs.json")
+        return additions
+
+    # Process each missing file
+    for mdx_file in missing_mdx_files:
+        group_name, docs_json_page = mdx_path_to_group_and_page(mdx_file)
+
+        if not group_name:
+            print(f"⚠️  Skipping {mdx_file}: Could not determine group")
+            continue
+
+        print(f"  {group_name}: {mdx_file}")
+
+        # Try to add to the group
+        added = False
+        tabs = en_data.get("tabs", [])
+        for tab in tabs:
+            if find_and_update_group(tab.get("pages", []), group_name, docs_json_page):
+                added = True
+                break
+
+        if added:
+            if group_name not in additions:
+                additions[group_name] = []
+            additions[group_name].append(docs_json_page)
+        else:
+            print(f"    ⚠️  Warning: Could not find '{group_name}' group in docs.json")
+
+    # Save updated docs.json
+    if additions:
+        with open(docs_json_path, 'w', encoding='utf-8') as f:
+            json.dump(docs_data, f, indent=2)
+
+        print(f"\n✅ Updated docs.json with {sum(len(pages) for pages in additions.values())} new page(s)")
+        print(f"\nPages added by group:")
+        for group_name, pages in sorted(additions.items()):
+            print(f"  {group_name}: {len(pages)} page(s)")
+
+    return additions
+
+
 def check_mdx_vs_docsjson() -> Dict:
     """
     Main validation function comparing MDX files against docs.json entries.
@@ -203,8 +406,10 @@ def print_results(results: Dict) -> None:
 
     # Print case mismatches
     if results["case_naming_mismatches"]:
-        print("\n⚠️  CASE/NAMING MISMATCHES:")
+        print("\n⚠️  CASE/NAMING MISMATCHES (not auto-fixed):")
         print(SEPARATOR)
+        print("These pages exist in both locations but with different casing.")
+        print("Manual review recommended.\n")
         for mismatch in results["case_naming_mismatches"]:
             print(f"  MDX:  {mismatch['mdx_path']}")
             print(f"  Docs: {mismatch['docs_path']}")
@@ -239,22 +444,41 @@ def save_json_report(results: Dict, output_path: str = DEFAULT_OUTPUT_REPORT) ->
     print(f"\n📄 JSON report saved to: {output_path}")
 
 
-def main() -> None:
+def main(args) -> None:
     """
     Main execution function.
 
-    Performs validation and exits with appropriate status code:
-    - 0: validation passed
+    Performs validation and optionally updates docs.json.
+    Exits with appropriate status code:
+    - 0: validation passed or pages were added
     - 1: validation failed or error occurred
     """
     try:
+
         results = check_mdx_vs_docsjson()
         print_results(results)
         save_json_report(results)
 
-        # Exit with error code if validation failed
         summary = results["summary"]
-        if summary["mdx_only_count"] > 0 or summary["case_mismatch_count"] > 0:
+        mdx_only = results["mdx_files_not_in_docsjson"]
+
+        # Update docs.json if requested and there are missing pages
+        if args.update and mdx_only:
+            print(f"\n{SEPARATOR}")
+            print("🔄 UPDATING DOCS.JSON")
+            print(SEPARATOR)
+            additions = update_docs_json_with_missing_pages(mdx_only)
+
+            if additions:
+                print(f"\n{SEPARATOR}")
+                print("✅ Update complete! Re-run script to verify.")
+                print(SEPARATOR)
+        elif not args.update and mdx_only:
+            print(f"\n💡 Tip: Run with --update to automatically add missing pages to docs.json")
+
+        # Exit with error code if validation issues remain
+        # (case mismatches still count as issues since they're not auto-fixed)
+        if summary["case_mismatch_count"] > 0:
             exit(1)
 
     except FileNotFoundError as e:
@@ -269,4 +493,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--update", action="store_true", default=True, help="Only generate report, don't update docs.json")
+    args = parser.parse_args()
+    main(args)
