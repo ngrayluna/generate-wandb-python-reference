@@ -146,7 +146,7 @@ def _add_frontmatter(docodile):
     Args:
         filename (str): Name of the file.
     """
-    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + _data_type_key_string(docodile) + "---\n\n"
+    return "---\n" + _title_key_string(docodile) + _type_key_string(docodile) + _data_type_key_string(docodile) + "---\n"
 
 def _data_type_key_string(docodile):
     """Add "function" or "Class" to the frontmatter."""
@@ -158,7 +158,15 @@ def _github_button(href_links):
     Args:
         href_links (str): URL for the GitHub button.
     """
-    return "{{< cta-button githubLink=" + href_links + " >}}"+ "\n\n"
+    return '<GitHubLink url="' + href_links + '" />' + "\n\n"
+
+def add_github_import_statement():
+    """Add GitHub import statement to the markdown file.
+    
+    Args:
+        filename (str): Name of the file.
+    """
+    return "import { GitHubLink } from '/snippets/en/_includes/github-source-link.mdx';" + "\n\n"
 
 
 def format_github_button(filename, base_url="https://github.com/wandb/wandb/blob/main/"):
@@ -337,7 +345,8 @@ def create_markdown(docodile, generator):
 
     with open(docodile.filename, 'w') as file:
         file.write(_add_frontmatter(docodile))
-        #file.write(format_github_button(docodile.getfile_path))
+        file.write(add_github_import_statement())
+        file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
 
         if docodile.object_type == "class" and docodile.isPydantic:

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Post-process markdown files to remove '_wandb' and everything after it from filenames.
-_wandb is added by LazyDocs to avoid conflicts during generation.
-Also includes function to delete empty directories.
-Converts .md files to .mdx files if specified. By default, this conversion is enabled.
+Post-process markdown files such as:
+- remove '_wandb' and everything after it from filenames. _wandb is added to
+    avoid conflicts during generation.
+- Delete empty directories.
+- Converts .md files to .mdx files if specified. By default, this conversion is enabled.
+- Lower cases all characters in filenames.
 """
 
 import os
@@ -170,6 +172,18 @@ def get_unique_filename(base_path):
             return new_path
         counter += 1
 
+def lowercase_filename(filename):
+    """
+    Lowercase all characters in a filename.
+
+    Args:
+        filename: The original filename
+
+    Returns:
+        The lowercased filename
+    """
+    return filename.lower()
+
 
 def rename_markdown_files(directory, dry_run=False, convert_to_mdx=False):
     """
@@ -194,7 +208,7 @@ def rename_markdown_files(directory, dry_run=False, convert_to_mdx=False):
     # Find all markdown files recursively
     for md_file in directory.rglob('*.md'):
         old_name = md_file.name
-        new_name = clean_filename(old_name)
+        new_name = lowercase_filename(clean_filename(old_name))
 
         # Update the title in frontmatter first (before renaming the file)
         if update_frontmatter_title(md_file, dry_run):
