@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-Post-process markdown files to remove '_wandb' and everything after it from filenames.
-_wandb is added by LazyDocs to avoid conflicts during generation.
-Also includes function to delete empty directories.
-Converts .md files to .mdx files if specified. By default, this conversion is enabled.
+Post-process markdown files such as:
+- remove '_wandb' and everything after it from filenames. _wandb is added to
+    avoid conflicts during generation.
+- Delete empty directories.
+- Converts .md files to .mdx files if specified. By default, this conversion is enabled.
+- Lower cases all characters in filenames.
 """
 
 import os
 from pathlib import Path
 import argparse
 import yaml
+import json
 
 
 def extract_frontmatter(file_path):
@@ -169,6 +172,18 @@ def get_unique_filename(base_path):
             return new_path
         counter += 1
 
+def lowercase_filename(filename):
+    """
+    Lowercase all characters in a filename.
+
+    Args:
+        filename: The original filename
+
+    Returns:
+        The lowercased filename
+    """
+    return filename.lower()
+
 
 def rename_markdown_files(directory, dry_run=False, convert_to_mdx=False):
     """
@@ -193,7 +208,7 @@ def rename_markdown_files(directory, dry_run=False, convert_to_mdx=False):
     # Find all markdown files recursively
     for md_file in directory.rglob('*.md'):
         old_name = md_file.name
-        new_name = clean_filename(old_name)
+        new_name = lowercase_filename(clean_filename(old_name))
 
         # Update the title in frontmatter first (before renaming the file)
         if update_frontmatter_title(md_file, dry_run):
@@ -324,6 +339,26 @@ def delete_empty_directories(root_directory):
             os.rmdir(dirpath)
 
 
+def create_mdx_file_list(renamed_files):
+    """
+    Extract and create list of only the .mdx files from the renamed_files list.
+
+    Args:
+        renamed_files: List of tuples (old_path, new_path) for renamed files
+
+    Returns:
+        List of relative paths for .mdx files
+    """
+    mdx_files = []
+
+    for old_path, new_path in renamed_files:
+        # Check if the new file has .mdx extension
+        if new_path.endswith('.mdx'):
+            mdx_files.append(new_path)
+
+    return sorted(mdx_files)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Remove "_wandb" and everything after from markdown filenames and clean up empty directories'
@@ -376,8 +411,12 @@ def main():
     print("\nAdding public API admonitions...")
     add_public_apis_admonition(directory=os.path.join(args.directory, 'public-api'))
 
-    return 0
+    # Extract and output .mdx files as JSON
+    mdx_files = create_mdx_file_list(renamed_files)
 
+    # Output to JSON and text files
+    with open('mdx_file_list.json', 'w') as f:
+        json.dump(mdx_files, f, indent=2)
 
 if __name__ == '__main__':
     exit(main())
