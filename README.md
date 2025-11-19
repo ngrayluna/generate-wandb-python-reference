@@ -47,12 +47,25 @@ These scripts use the local cloned version of `wandb` package to generate the ma
 Check out the branch or commit that you want to generate the docs for.
 
 ```bash title="wandb"
-git checkout <branch-or-commit>
+cd wandb/
+git fetch --tags
+git checkout <tag-or-commit-hash>
+```
+
+> Note: You can also use a specific tag instead of a commit hash. This is useful if you want to generate docs for a specific release.
+
+For example, to generate docs for the `v0.23.0` release:
+
+```bash title="wandb"
+cd wandb/
+git fetch --tags
+git checkout v0.23.0
 ```
 
 The entrypoint for generating the W&B Python SDK docs is the `generate-wandb-python-reference/create_wandb_sdk_docs.sh` script.
 
 ```bash title="generate-wandb-python-reference"
+cd ../generate-wandb-python-reference/
 bash create_wandb_sdk_docs.sh
 ```
 
