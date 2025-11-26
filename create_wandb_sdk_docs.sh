@@ -34,8 +34,5 @@ python sort_markdown_files.py --source_directory=$TEMP_DIR --destination_directo
 # Clean up the directory: add admonitions, extract mdx files, etc.
 python cleanup_directory.py --directory=$DESTINATION_DIR
 
-# Create _index.md files
-#python create_landing_pages.py --source_directory=$DESTINATION_DIR
-
 # Compare generated .mdx files with docs.json
 python check_mdx_vs_docsjson.py

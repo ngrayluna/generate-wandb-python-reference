@@ -3,38 +3,47 @@
 Scripts that generated markdown docs for Workspaces API and broader W&B Python API documentation.
 
 ## Setup
-1. Navigate to the root directory that contains your local clone of the `wandb` repository. This is the directory that contains the `wandb` package.
+Navigate to a directory where you want to clone both the `wandb` repository and the `generate-wandb-python-reference` repository. For example, you can create a new directory called `awesome-directory`:
 
+1. Create and navigate to your working directory:
    ```bash
-   cd path/to/your/root/directory/with/wandb/package
+   mkdir awesome-directory
+   cd awesome-directory
    ```
-2. Clone `generate-wandb-python-reference` repository:
+
+2. Clone the `wandb` repository locally if you haven't already:
 
    ```bash
+   git clone https://github.com/wandb/wandb.git
+   ```
+
+3. Navigate back to the parent directory (in this case `awesome-directory`) and clone the `generate-wandb-python-reference` repository:
+
+   ```bash
+   cd ../
    git clone https://github.com/user-attachments/generate-wandb-python-reference.git
    ```
 
-    Your local directory structure should look like this:
+Your local directory structure should look like this:
 
-    ```text
-    awesome-directory/
-    ├── generate-wandb-python-reference/
-    │   ├── create_wandb_sdk_docs.sh
-    │   ├── generate_sdk_docs.py
-    │   ├── process_markdown.py
-    │   ├── sort_markdown_files.py
-    │   ├── create_landing_pages.py
-    │   ├── requirements.txt
-    │   └── configuration.py
-    └── wandb/
-        ├── wandb/
-        │   ├── __init__.py
-        │   ├── __init__.template.pyi
-        │   └── ... # other files
-        └──
-    ```
+```text
+awesome-directory/
+├── generate-wandb-python-reference/
+│   ├── create_wandb_sdk_docs.sh
+│   ├── generate_sdk_docs.py
+│   ├── process_markdown.py
+│   ├── sort_markdown_files.py
+│   ├── requirements.txt
+│   └── configuration.py
+└── wandb/
+   ├── wandb/
+   │   ├── __init__.py
+   │   ├── __init__.template.pyi
+   │   └── ... # other files
+   └──
+```
 
-3. Install the required dependencies:
+4. Install the required dependencies:
    ```bash
    cd generate-wandb-python-reference
    pip install -r requirements.txt
