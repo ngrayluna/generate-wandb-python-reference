@@ -368,7 +368,7 @@ def create_markdown(docodile, generator):
             print("No doc generator for this object type")
 
 
-def check_temp_dir(temp_output_dir):
+def check_temp_dir(temp_output_dir: str) -> None:
     """Check if temporary directory exists.
     
     Args:
@@ -378,7 +378,7 @@ def check_temp_dir(temp_output_dir):
         os.makedirs(temp_output_dir)
 
 
-def get_api_list_from_init(file_path):
+def get_api_list_from_init(file_path: str) -> list[str]:
     """Get list of APIs from a Python __init__.py or .pyi file.
     Excludes APIs marked with # doc:exclude.
 
