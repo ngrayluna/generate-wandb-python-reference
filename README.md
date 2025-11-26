@@ -1,6 +1,6 @@
 # Generate W&B Python SDK with `lazydocs`
 
-Scripts that generated markdown docs for Workspaces API and broader W&B Python API documentation.
+Scripts that generate markdown files for W&B Python SDK.
 
 ## Setup
 Navigate to a directory where you want to clone both the `wandb` repository and the `generate-wandb-python-reference` repository. For example, you can create a new directory called `awesome-directory`:
@@ -80,14 +80,16 @@ bash create_wandb_sdk_docs.sh
 
 The output will be generated in the `wandb/wandb/docs/python` directory. The generated markdown files will be organized into subdirectories based on the `object_type` specified in the front matter of each markdown file.
 
-## Add W&B (Models) APIs to the reference docs
+## How to add W&B Python objects to the reference docs
 
-Start off by asking yourself: Is the API you defined already in an existing namespace? E.g. `wandb.sdk`, `wandb.apis.public`, or `wandb.sdk.launch`. For a full list, see the "module" keys specifed in `configuration.py`.
+First, ask yourself: Is the Python object already in an existing namespace? E.g. `wandb.sdk`, `wandb.apis.public`, or `wandb.sdk.automation`. 
+
+> [See the `"module"` keys](https://github.com/ngrayluna/generate-wandb-python-reference/blob/main/configuration.py#L5) specifed in `configuration.py` for a full list of existing namespaces.
 
 If yes, then:
 
 1. Add your new APIs to the `__all__` contsant within the appropriate `__init__.py` or `__init__.template.pyi` file. See  `wandb/wandb/__init__.template.pyi` for an example.
-2. Add an [ignore marker](#ignore-markers) to the docstring of the class, method, or function that you want to exclude from the documentation. For example:
+2. If there is a class, class method, function, etc. that SHOULD NOT be publically documented, add an [ignore marker](#ignore-markers) to the docstring of that class, method, etc. For example:
    ```python
    class MyClass:
        """This is an awesome Python Class.
@@ -135,33 +137,24 @@ To exclude certain classes, methods, or functions from the documentation generat
 5. `<!-- lazydoc-ignore-init: internal -->` - Removes `__init__` method definitions
 6. `<!-- lazydoc-ignore-class-attributes -->` - Removes individual attribute bullet points
 
-Why does this exist?
-* There are internal classes, methods, properties, etc. in the Python SDK that are not meant to be publicly exposed and do not use the Python convention of preprending a single underscore (`_`) to indicate that they are private.
-* `lazydocs` is a generic tool that generates documentation for any Python code, it may include some artifacts that are not relevant to the W&B Python SDK.
+> Why does ignore markers exist?
+> * There are internal classes, methods, properties, etc. in the Python SDK that are not meant to be publicly exposed and do not use the Python convention of preprending a single underscore (`_`) to indicate that they are private.
+> * `lazydocs` is a generic tool that generates documentation for any Python code, it may include some artifacts that are not relevant to the W&B Python SDK.
 
 
-## Architecture and key components
-
-### Documentation pipeline
-`create_wandb_sdk_docs.sh` follows a 5-step process to generate the W&B Python SDK documentation:
+## Documentation pipeline
+`create_wandb_sdk_docs.sh` follows a 4-step process to generate the W&B Python SDK documentation:
 
 1. **`generate_sdk_docs.py`**: Generates initial markdown documentation using `lazydocs`
    - Parses W&B Python SDK modules defined in `configuration.py`
    - Extracts classes, functions, and data types from `__init__.py` and `__init__.template.pyi` files
    - Handles Pydantic models with custom Google-style docstring generation
-   - Adds Hugo frontmatter (title, namespace, python_object_type) to each markdown file
    - Generates GitHub source links for each documented object
    - Outputs to temporary directory `/wandb_sdk_docs/`
 
 2. **`process_sdk_markdown.py`**: Cleans and enhances markdown artifacts
    - Removes HTML tags and lazydocs-specific formatting artifacts
-   - Processes ignore markers to exclude internal/private APIs:
-     - `<!-- lazydoc-ignore: internal -->` - Removes internal class methods
-     - `<!-- lazydoc-ignore-class: internal -->` - Removes entire classes
-     - `<!-- lazydoc-ignore-function: internal -->` - Removes functions
-     - `<!-- lazydoc-ignore-classmethod: internal -->` - Removes classmethods
-     - `<!-- lazydoc-ignore-init: internal -->` - Removes `__init__` methods
-     - `<!-- lazydoc-ignore-class-attributes -->` - Removes individual attribute bullets
+   - Processes ignore markers to exclude internal/private APIs.
    - Reorders class documentation (moves `__init__` before Args section)
    - Removes "Global Variables" sections
 
@@ -178,24 +171,8 @@ Why does this exist?
    - Adds public API admonitions to files in `/public-api/` directory
    - Deletes empty directories
 
-5. **`create_landing_pages.py`**: Generates index pages (optional, currently commented out)
-   - Creates `_index.md` files for each subdirectory
-   - Builds Hugo cardpane layouts for the main Python reference index
-   - Uses metadata from `configuration.py` to populate titles and descriptions
-
-### Directory Structure
-- `/wandb_sdk_docs/` - Temporary directory for initial lazydocs output (cleaned up during pipeline)
-- `/python/` - Final organized documentation with subdirectories:
-  - `/sdk/` - Core SDK functions and classes
-    - `/functions/` - Global SDK functions
-    - `/experiments/` - SDK classes
-  - `/public-api/` - Query API documentation for retrieving run data
-  - `/automations/` - Automation features and triggers
-  - `/data-types/` - W&B data type definitions (Media, Tables, etc.)
-  - `/custom-charts/` - Chart visualization tools
 
 ### Configuration
 - **`configuration.py`**: Central configuration defining all documentation sources
   - Maps Python modules to their source locations
-  - Defines Hugo frontmatter specifications for each namespace
   - Specifies output directory structure and organization rules
