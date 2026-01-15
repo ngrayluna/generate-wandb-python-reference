@@ -135,7 +135,8 @@ def process_text(markdown_text: str) -> str:
 
 
 def main(args):
-    for filename in glob.glob(os.path.join(os.getcwd(), args.output_directory, "*.md")):
+    for filename in glob.glob(os.path.join(os.getcwd(), args.markdown_directory, "*.md")):
+        print("Reading in...", filename)
         with open(filename, "r") as f:
             text = f.read()
         with open(filename, "w") as f:
@@ -144,6 +145,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Post‑process lazydocs markdown.")
-    parser.add_argument("--output_directory", default="wandb_sdk_docs",
+    parser.add_argument("--markdown_directory", default="wandb_sdk_docs",
                         help="Directory containing markdown files to process")
     main(parser.parse_args())
