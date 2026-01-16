@@ -124,7 +124,6 @@ def main(args):
             file.write(add_frontmatter(filename))
             file.write(add_github_import_statement())
             file.write(format_github_button(filename))
-            #file.write(add_githublink())
             file.write(markdown_text)
             file.truncate()
 
