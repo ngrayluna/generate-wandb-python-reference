@@ -76,6 +76,31 @@ def add_github_import_statement():
     """
     return "import { GitHubLink } from '/snippets/en/_includes/github-source-link.mdx';" + "\n\n"
 
+def format_github_button(filename, base_url="https://github.com/wandb/wandb-workspaces/blob/main/wandb_workspaces/"):
+    """Add GitHub button to the markdown file.
+    
+    Args:
+        filename (str): Name of the file.
+        base_url (str): Base URL for the GitHub button.
+    """
+
+    name = os.path.basename(filename).split('.')[1]
+    if "reports" in name:
+        version = os.path.basename(filename).split('.')[2]
+        href_links = os.path.join(base_url, name + "/" + version + "/internal.py")
+    else:
+        href_links = os.path.join(base_url, name + "/internal.py")
+    return _github_button(href_links)
+
+def _github_button(href_links):
+    """To do: Add hugo scripting to add this function. For now, just add code line # for debugging.
+    
+    Args:
+        href_links (str): URL for the GitHub button.
+    """
+    return '<GitHubLink url="' + href_links + '" />' + "\n\n"
+
+
 def main(args):
 
     # Read input markdown file
@@ -91,12 +116,15 @@ def main(args):
             markdown_text = remove_module_header(markdown_text)
             markdown_text = remove_images(markdown_text)
             markdown_text = remove_internal_classes(markdown_text)
-            markdown_text = remove_empty_lines(markdown_text) 
+            markdown_text = remove_empty_lines(markdown_text)
+            # Alphabetize headings can be added here if needed
 
             # Write back to the file with frontmatter and GitHub import statement
             file.seek(0)
             file.write(add_frontmatter(filename))
             file.write(add_github_import_statement())
+            file.write(format_github_button(filename))
+            #file.write(add_githublink())
             file.write(markdown_text)
             file.truncate()
 
