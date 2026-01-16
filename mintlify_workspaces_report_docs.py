@@ -100,6 +100,56 @@ def _github_button(href_links):
     """
     return '<GitHubLink url="' + href_links + '" />' + "\n\n"
 
+def alphabetize_headings(markdown_text):
+    """Alphabetize the classes, etc. in the markdown file."""
+    # Split the text into two parts: the module docstring (before the first "---") and the rest
+    parts = markdown_text.split('---', 1)
+    
+    # If there is content before the first "---", treat it as the module docstring
+    if len(parts) > 1:
+        docstring = parts[0].strip()  # The module docstring
+        rest_of_content = '---' + parts[1]  # The remaining content starting with the first ---
+    else:
+        # If no separator found, assume everything is the module docstring
+        docstring = markdown_text.strip()
+        rest_of_content = ""
+    
+    # Split the rest of the content into blocks based on the "---" separator
+    blocks = re.split(r'(?=---)', rest_of_content)
+
+    sections = []
+    
+    # Pattern to match H2 headings (classes)
+    h2_pattern = re.compile(r'## <kbd>class</kbd> `([^`]+)`')
+    
+    current_section = None
+    
+    # Iterate over each block to find H2 headings and group content, including H3
+    for block in blocks:
+        h2_match = h2_pattern.search(block)
+        if h2_match:
+            # Extract the class name from the H2 heading
+            class_name = h2_match.group(1)
+            if current_section:
+                sections.append(current_section)
+            # Start a new section with the current block as content
+            current_section = (class_name, block)
+        elif current_section:
+            # Append the block content to the current section
+            current_section = (current_section[0], current_section[1] + block)
+
+    # Append the last section
+    if current_section:
+        sections.append(current_section)
+
+    # Sort the sections alphabetically by the class name
+    sections.sort(key=lambda x: x[0])
+
+    # Reconstruct the markdown text with the docstring followed by the sorted sections
+    sorted_markdown = docstring + "\n\n" + "\n\n".join([section[1] for section in sections])
+
+    return sorted_markdown
+
 
 def main(args):
 
@@ -117,7 +167,7 @@ def main(args):
             markdown_text = remove_images(markdown_text)
             markdown_text = remove_internal_classes(markdown_text)
             markdown_text = remove_empty_lines(markdown_text)
-            # Alphabetize headings can be added here if needed
+            markdown_text = alphabetize_headings(markdown_text)
 
             # Write back to the file with frontmatter and GitHub import statement
             file.seek(0)
