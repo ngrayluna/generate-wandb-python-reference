@@ -44,6 +44,12 @@ def remove_empty_lines(markdown_text):
     cleaned_text = re.sub(r'\n\s*\n', '\n', markdown_text).strip()
     return cleaned_text
 
+
+def strip_trailing_whitespace(text):
+    """Strip trailing whitespace (spaces/tabs) from each line in the text."""
+    return re.sub(r'[ \t]+$', '', text, flags=re.MULTILINE)
+
+
 def rename_markdown_file(old_filename, output_directory="."):
     """
     Rename the markdown file from old_filename to new_filename.
@@ -166,8 +172,9 @@ def main(args):
             markdown_text = remove_module_header(markdown_text)
             markdown_text = remove_images(markdown_text)
             markdown_text = remove_internal_classes(markdown_text)
-            markdown_text = remove_empty_lines(markdown_text)
+            # markdown_text = remove_empty_lines(markdown_text)
             markdown_text = alphabetize_headings(markdown_text)
+            markdown_text = strip_trailing_whitespace(markdown_text)
 
             # Write back to the file with frontmatter and GitHub import statement
             file.seek(0)
@@ -187,5 +194,3 @@ if __name__ == "__main__":
     parser.add_argument("--markdown_directory", default="wandb_sdk_docs",
                         help="Directory containing markdown files to process")
     main(parser.parse_args())
-
-# wandb_workspaces.workspaces.interface.md
