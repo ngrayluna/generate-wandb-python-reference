@@ -106,6 +106,14 @@ def _github_button(href_links):
     """
     return '<GitHubLink url="' + href_links + '" />' + "\n\n"
 
+def add_public_preview_note():
+    """Add admonition markdown to the markdown file."""
+    note = (
+        "<Note>\nW&B Report and Workspace API is in Public Preview.\n</Note>\n\n"
+    )
+    return note
+
+
 def alphabetize_headings(markdown_text):
     """Alphabetize the classes, etc. in the markdown file."""
     # Split the text into two parts: the module docstring (before the first "---") and the rest
@@ -181,6 +189,7 @@ def main(args):
             file.write(add_frontmatter(filename))
             file.write(add_github_import_statement())
             file.write(format_github_button(filename))
+            file.write(add_public_preview_note())
             file.write(markdown_text)
             file.truncate()
 
