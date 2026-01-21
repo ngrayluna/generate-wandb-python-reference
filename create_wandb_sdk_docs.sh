@@ -23,7 +23,7 @@ fi
 python generate_sdk_docs.py --temp_output_directory=$TEMP_DIR
 
 # Process output doc created by lazydocs so it works with Docusaurus
-python process_sdk_markdown.py --output_directory=$TEMP_DIR
+python process_sdk_markdown.py --markdown_directory=$TEMP_DIR
 
 # Make destination directory
 mkdir -p $DESTINATION_DIR

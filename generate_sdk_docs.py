@@ -140,7 +140,7 @@ def _type_key_string(docodile):
         return SOURCE["SDK"]["hugo_specs"]["frontmatter"] + "\n"
  
 
-def _add_frontmatter(docodile):
+def add_frontmatter(docodile):
     """Add frontmatter to the markdown file.
     
     Args:
@@ -344,7 +344,7 @@ def create_markdown(docodile, generator):
 
 
     with open(docodile.filename, 'w') as file:
-        file.write(_add_frontmatter(docodile))
+        file.write(add_frontmatter(docodile))
         file.write(add_github_import_statement())
         file.write(format_github_button(docodile.getfile_path))
         file.write("\n\n")
