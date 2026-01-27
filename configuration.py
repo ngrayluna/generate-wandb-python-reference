@@ -22,7 +22,7 @@ SOURCE = {
             "frontmatter": "namespace: python_sdk_custom_charts",
             "folder_name": "custom-charts",
         },
-    },    
+    },
     "DATATYPE": {
         "module": "wandb.sdk.data_types",
         "file_path": BASE_DIR / "wandb" / "wandb" / "__init__.template.pyi",
@@ -32,7 +32,7 @@ SOURCE = {
             "frontmatter": "namespace: python_sdk_data_type",
             "folder_name": "data-types",
         },
-    },    
+    },
     "PUBLIC_API": {
         "module": "wandb.apis.public",
         "file_path": BASE_DIR / "wandb" / "wandb" / "apis" / "public" / "__init__.py",
@@ -51,6 +51,16 @@ SOURCE = {
             "description": "Automate your W&B workflows.",
             "frontmatter": "namespace: automations_namespace",
             "folder_name": "automations",
+        },
+    },
+    "REGISTRIES": {
+        "module": "wandb.registries",
+        "file_path": BASE_DIR / "wandb" / "wandb" / "registries" / "__init__.py",
+        "hugo_specs": {
+            "title": "Registries",
+            "description": "Manage and share W&B artifacts across your organization.",
+            "frontmatter": "namespace: registries_namespace",
+            "folder_name": "registries",
         },
     },
 }
