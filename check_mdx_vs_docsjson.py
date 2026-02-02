@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+Author: Vibe coding with Claude Code
+
 Check MDX file list against docs.json Python group entries.
 
 This script validates that:
@@ -8,6 +10,7 @@ This script validates that:
 3. Optionally updates docs.json with missing pages (--update flag)
 """
 
+import os
 import argparse
 import json
 import logging
@@ -439,7 +442,7 @@ def print_results(results: Dict) -> None:
     logger.info(SEPARATOR)
 
 
-def save_json_report(results: Dict, output_path: str = DEFAULT_OUTPUT_REPORT) -> None:
+def save_json_report(results: Dict, output_path:str) -> None:
     """
     Save validation results to a JSON file.
 
@@ -447,7 +450,8 @@ def save_json_report(results: Dict, output_path: str = DEFAULT_OUTPUT_REPORT) ->
         results: Dictionary containing validation results
         output_path: Path where JSON report will be saved
     """
-    with open(output_path, 'w', encoding='utf-8') as f:
+
+    with open(os.path.join(output_path, 'mdx_docsjson_validation_report.json'), 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
     logger.info(f"\n📄 JSON report saved to: {output_path}")
 
@@ -465,7 +469,7 @@ def main(args) -> None:
 
         results = check_mdx_vs_docsjson()
         print_results(results)
-        save_json_report(results)
+        save_json_report(results, output_path=args.output_report_dir)
 
         summary = results["summary"]
         mdx_only = results["mdx_files_not_in_docsjson"]
@@ -503,5 +507,8 @@ def main(args) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--update", action="store_true", help="Update docs.json with missing pages (default: report only)")
+    parser.add_argument("--mdx-list", type=str, default=DEFAULT_MDX_FILE_LIST, help="Path to MDX file list JSON (default: mdx_file_list.json)")
+    parser.add_argument("--docs-json", type=str, default=DEFAULT_DOCS_JSON, help="Path to docs.json file (default: docs.json)")
+    parser.add_argument("--output-report-dir", type=str, default=DEFAULT_OUTPUT_REPORT, help="Path to output JSON report directory(default: mdx_docsjson_validation_report.json)")
     args = parser.parse_args()
     main(args)

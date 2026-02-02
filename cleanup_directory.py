@@ -359,33 +359,7 @@ def create_mdx_file_list(renamed_files):
     return sorted(mdx_files)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description='Remove "_wandb" and everything after from markdown filenames and clean up empty directories'
-    )
-    parser.add_argument(
-        '--directory',
-        default='python',
-        help='Directory to process (will process all subdirectories)'
-    )
-    parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be renamed without actually renaming'
-    )
-    parser.add_argument(
-        '--skip-empty-cleanup',
-        action='store_true',
-        help='Skip deletion of empty directories'
-    )
-    parser.add_argument(
-        '--convert-to-mdx',
-        action='store_true',
-        default=True,
-        help='Convert .md extensions to .mdx'
-    )
-
-    args = parser.parse_args()
+def main(args):
 
     if not os.path.exists(args.directory):
         print(f"Error: Directory '{args.directory}' does not exist")
@@ -412,11 +386,46 @@ def main():
     add_public_apis_admonition(directory=os.path.join(args.directory, 'public-api'))
 
     # Extract and output .mdx files as JSON
+    print("\nCreating MDX file list...")
     mdx_files = create_mdx_file_list(renamed_files)
 
     # Output to JSON and text files
-    with open('mdx_file_list.json', 'w') as f:
+    output_dir = args.json_output if args.json_output else '.'
+    
+    # Ensure output directory exists
+    print(f"Output directory for MDX file list: {output_dir}")
+    with open(os.path.join(output_dir, 'mdx_file_list.json'), 'w') as f:
         json.dump(mdx_files, f, indent=2)
 
 if __name__ == '__main__':
-    exit(main())
+    parser = argparse.ArgumentParser(
+        description='Remove "_wandb" and everything after from markdown filenames and clean up empty directories'
+    )
+    parser.add_argument(
+        '--directory',
+        default='python',
+        help='Directory to process (will process all subdirectories)'
+    )
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Show what would be renamed without actually renaming'
+    )
+    parser.add_argument(
+        '--skip-empty-cleanup',
+        action='store_true',
+        help='Skip deletion of empty directories'
+    )
+    parser.add_argument(
+        '--convert-to-mdx',
+        action='store_true',
+        default=True,
+        help='Convert .md extensions to .mdx'
+    )
+    parser.add_argument(
+        '--json-output',
+        default=None,
+        help='Output the list of .mdx files to a JSON file in the specified directory'
+    )
+    args = parser.parse_args()
+    main(args)
