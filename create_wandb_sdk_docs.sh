@@ -49,4 +49,4 @@ python cleanup_directory.py --directory=$DESTINATION_DIR --json-output=$JSON_OUT
 # Compare generated .mdx files with docs.json
 python check_mdx_vs_docsjson.py --mdx-list=$JSON_OUTPUT_DIR/mdx_file_list.json \
   --docs-json=docs.json \
-  --output-report=$JSON_OUTPUT_DIR
+  --output-report-dir=$JSON_OUTPUT_DIR
