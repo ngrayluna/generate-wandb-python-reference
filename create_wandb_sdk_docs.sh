@@ -22,7 +22,7 @@ else
   mkdir -p "$DESTINATION_DIR"
 fi
 
-# Check if the logs directory exists, if it does, remove it else create it
+# Check if the destination directory exists, if it does, remove it else create it
 if [ -d "$JSON_OUTPUT_DIR" ]; then
   echo "Directory '$JSON_OUTPUT_DIR' already exists. Removing it."
   rm -rf "$JSON_OUTPUT_DIR"

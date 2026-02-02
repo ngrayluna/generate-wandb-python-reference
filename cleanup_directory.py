@@ -359,6 +359,17 @@ def create_mdx_file_list(renamed_files):
     return sorted(mdx_files)
 
 
+def check_json_output_directory(json_output):
+    """
+    Ensure the JSON output directory exists, create it if it doesn't.
+
+    Args:
+        json_output: Path to the JSON output directory
+    """
+    if json_output and not os.path.exists(json_output):
+        print(f"Creating JSON output directory: {json_output}")
+        os.makedirs(json_output, exist_ok=True)
+
 def main(args):
 
     if not os.path.exists(args.directory):
@@ -385,16 +396,17 @@ def main(args):
     print("\nAdding public API admonitions...")
     add_public_apis_admonition(directory=os.path.join(args.directory, 'public-api'))
 
+    # Check and create JSON output directory if needed
+    # Output to JSON and text files
+    output_dir = args.json_output if args.json_output else '.'
+    check_json_output_directory(output_dir)
+
     # Extract and output .mdx files as JSON
     print("\nCreating MDX file list...")
     mdx_files = create_mdx_file_list(renamed_files)
 
-    # Output to JSON and text files
-    output_dir = args.json_output if args.json_output else '.'
-    
-    # Ensure output directory exists
-    print(f"Output directory for MDX file list: {output_dir}")
-    with open(os.path.join(output_dir, 'mdx_file_list.json'), 'w') as f:
+    filename = os.path.join(output_dir, 'mdx_file_list.json')
+    with open(filename, 'w', encoding='utf-8') as f:
         json.dump(mdx_files, f, indent=2)
 
 if __name__ == '__main__':

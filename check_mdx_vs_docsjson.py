@@ -338,7 +338,7 @@ def check_mdx_vs_docsjson() -> Dict:
         Dictionary containing validation results with counts and detailed lists
     """
     logger.info("Loading MDX file list...")
-    mdx_files = load_mdx_file_list()
+    mdx_files = load_mdx_file_list(args.mdx_list)
 
     logger.info("Parsing docs.json for Python group entries...")
     docs_pages = extract_python_pages_from_docs()
@@ -450,10 +450,10 @@ def save_json_report(results: Dict, output_path:str) -> None:
         results: Dictionary containing validation results
         output_path: Path where JSON report will be saved
     """
-
-    with open(os.path.join(output_path, 'mdx_docsjson_validation_report.json'), 'w', encoding='utf-8') as f:
+    full_path = os.path.join(output_path, 'mdx_docsjson_validation_report.json')
+    with open(full_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
-    logger.info(f"\n📄 JSON report saved to: {output_path}")
+    logger.info(f"\n📄 JSON report saved to: {full_path}")
 
 
 def main(args) -> None:
