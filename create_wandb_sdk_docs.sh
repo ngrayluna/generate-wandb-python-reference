@@ -2,6 +2,26 @@
 
 TEMP_DIR=wandb_sdk_docs
 DESTINATION_DIR=python
+JSON_OUTPUT_DIR=logs
+PARENT_DOCS_DIR="../docs"
+DOCS_JSON_FILE="$PARENT_DOCS_DIR/docs.json"
+
+# Parse command line arguments
+CHECK_DOCS_JSON=false
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --check-docs-json)
+      CHECK_DOCS_JSON=true
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [--check-docs-json]"
+      exit 1
+      ;;
+  esac
+done
 
 # Check if the directory exists, if it does, remove it else create it
 if [ -d "$TEMP_DIR" ]; then
@@ -9,6 +29,7 @@ if [ -d "$TEMP_DIR" ]; then
   rm -rf "$TEMP_DIR"
 else
   echo "Directory '$TEMP_DIR' does not exist. Creating it."
+  mkdir -p "$TEMP_DIR"
 fi
 
 # Check if the destination directory exists, if it does, remove it else create it
@@ -17,6 +38,16 @@ if [ -d "$DESTINATION_DIR" ]; then
   rm -rf "$DESTINATION_DIR"
 else
   echo "Directory '$DESTINATION_DIR' does not exist. Creating it."
+  mkdir -p "$DESTINATION_DIR"
+fi
+
+# Check if the destination directory exists, if it does, remove it else create it
+if [ -d "$JSON_OUTPUT_DIR" ]; then
+  echo "Directory '$JSON_OUTPUT_DIR' already exists. Removing it."
+  rm -rf "$JSON_OUTPUT_DIR"
+else
+  echo "Directory '$JSON_OUTPUT_DIR' does not exist. Creating it."
+  mkdir -p "$JSON_OUTPUT_DIR"
 fi
 
 # Generate SDK docs using lazydocs
@@ -32,7 +63,29 @@ mkdir -p $DESTINATION_DIR
 python sort_markdown_files.py --source_directory=$TEMP_DIR --destination_directory=$DESTINATION_DIR
 
 # Clean up the directory: add admonitions, extract mdx files, etc.
-python cleanup_directory.py --directory=$DESTINATION_DIR
+python cleanup_directory.py --directory=$DESTINATION_DIR --json-output=$JSON_OUTPUT_DIR
 
-# Compare generated .mdx files with docs.json
-python check_mdx_vs_docsjson.py
+# Optionally copy docs.json and run comparison check
+if [ "$CHECK_DOCS_JSON" = true ]; then
+  if [ -d "$PARENT_DOCS_DIR" ]; then
+    echo "Found '$PARENT_DOCS_DIR' directory."
+    if [ -f "$DOCS_JSON_FILE" ]; then
+      echo "Copying docs.json to current directory..."
+      cp "$DOCS_JSON_FILE" .
+      echo "Done. docs.json copied successfully."
+    else
+      echo "Error: docs.json not found in '$PARENT_DOCS_DIR'."
+      exit 1
+    fi
+  else
+    echo "Error: '$PARENT_DOCS_DIR' directory does not exist."
+    exit 1
+  fi
+
+  # Compare generated .mdx files with docs.json
+  python check_mdx_vs_docsjson.py --mdx-list=$JSON_OUTPUT_DIR/mdx_file_list.json \
+    --docs-json=$DOCS_JSON_FILE \
+    --output-report-dir=$JSON_OUTPUT_DIR
+else
+  echo "Skipping docs.json check. Use --check-docs-json to enable."
+fi

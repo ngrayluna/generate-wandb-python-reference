@@ -49,6 +49,33 @@ awesome-directory/
    pip install -r requirements.txt
    ``` 
 
+5. (Optionally) Install the [W&B Docs](https://github.com/wandb/docs) repo in the root directory. Continuing from the previous example:
+   ```bash
+   cd generate-wandb-python-reference/
+   git clone https://github.com/wandb/docs.git
+   ```
+   Your directory should look similar to the following:
+
+   ```text
+   awesome-directory/
+   ├── generate-wandb-python-reference/
+   │   ├── create_wandb_sdk_docs.sh
+   │   ├── generate_sdk_docs.py
+   │   ├── process_markdown.py
+   │   ├── sort_markdown_files.py
+   │   ├── requirements.txt
+   │   └── configuration.py
+   └── wandb/
+   |   ├── wandb/
+   |   │   ├── __init__.py
+   |   │   ├── __init__.template.pyi
+   |   │   └── ... # other files
+   |   └──
+   └── docs/
+      ├── docs.json
+      └── ... # other files
+   ```
+
 ## Create W&B Python SDK Docs
 
 These scripts use the local cloned version of `wandb` package to generate the markdown files. (This is why you need to clone the `generate-wandb-python-reference` repository into the same directory as your local `wandb` package.)
@@ -80,7 +107,27 @@ bash create_wandb_sdk_docs.sh
 
 The output will be generated in the `wandb/wandb/docs/python` directory. The generated markdown files will be organized into subdirectories based on the `object_type` specified in the front matter of each markdown file.
 
-## How to add W&B Python objects to the reference docs
+#### Optional flag: `--check-docs-json`
+
+The `docs.json` file in the [W&B Docs](https://github.com/wandb/docs) repository defines the sidebar navigation structure for the documentation site. Each `.mdx` file must be referenced in `docs.json` to appear in the sidebar.
+
+Use the `--check-docs-json` flag to verify that all generated `.mdx` files are properly referenced in `docs.json`:
+
+```bash
+bash create_wandb_sdk_docs.sh --check-docs-json
+```
+
+This flag:
+1. Copies `docs.json` from the parent `docs/` directory to the current directory
+2. Runs `check_mdx_vs_docsjson.py` to compare generated `.mdx` files against `docs.json`
+
+The check helps identify:
+- New `.mdx` files that need to be added to `docs.json`
+- Stale references in `docs.json` pointing to files that no longer exist
+
+By default, this check is skipped. Use this flag when you want to ensure the generated documentation will integrate correctly with the docs site navigation.
+
+## Add new W&B Python objects to the reference docs
 
 First, ask yourself: Is the Python object already in an existing namespace? E.g. `wandb.sdk`, `wandb.apis.public`, or `wandb.sdk.automation`. 
 
