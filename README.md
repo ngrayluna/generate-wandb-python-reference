@@ -129,8 +129,6 @@ By default, this check is skipped. Use this flag when you want to ensure the gen
 
 ## Add new W&B Python objects to the reference docs
 
-## Add new W&B Python objects to the reference docs
-
 ```
                     ┌─────────────────────────────────────┐
                     │  Add new Python object to docs      │
