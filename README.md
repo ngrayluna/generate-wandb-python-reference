@@ -3,7 +3,7 @@
 Scripts that generate markdown files for W&B Python SDK.
 
 ## Setup
-Navigate to a directory where you want to clone both the `wandb` repository and the `generate-wandb-python-reference` repository. For example, you can create a new directory called `awesome-directory`:
+Navigate to a directory where you want to clone both the `wandb` repository and the `generate-wandb-python-reference` repository. For example, suppose you create a directory called `awesome-directory` as the root directory:
 
 1. Create and navigate to your working directory:
    ```bash
@@ -21,8 +21,10 @@ Navigate to a directory where you want to clone both the `wandb` repository and 
 
    ```bash
    cd ../
-   git clone https://github.com/user-attachments/generate-wandb-python-reference.git
+   git clone https://github.com/ngrayluna/generate-wandb-python-reference.git
    ```
+
+> The previous examples clone repos using `https`. Consider using a password-protected SSH remote URL instead.
 
 Your local directory structure should look like this:
 
@@ -51,7 +53,7 @@ awesome-directory/
 
 5. (Optionally) Install the [W&B Docs](https://github.com/wandb/docs) repo in the root directory. Continuing from the previous example:
    ```bash
-   cd generate-wandb-python-reference/
+   cd awesome-directory
    git clone https://github.com/wandb/docs.git
    ```
    Your directory should look similar to the following:
