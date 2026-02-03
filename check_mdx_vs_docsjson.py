@@ -466,7 +466,7 @@ def main(args) -> None:
     - 1: validation failed or error occurred
     """
     try:
-
+        # Run validation checks and save as report
         results = check_mdx_vs_docsjson()
         print_results(results)
         save_json_report(results, output_path=args.output_report_dir)
