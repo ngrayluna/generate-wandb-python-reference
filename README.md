@@ -129,9 +129,56 @@ By default, this check is skipped. Use this flag when you want to ensure the gen
 
 ## Add new W&B Python objects to the reference docs
 
-First, ask yourself: Is the Python object already in an existing namespace? E.g. `wandb.sdk`, `wandb.apis.public`, or `wandb.sdk.automation`. 
+## Add new W&B Python objects to the reference docs
 
-> [See the `"module"` keys](https://github.com/ngrayluna/generate-wandb-python-reference/blob/main/configuration.py#L5) specifed in `configuration.py` for a full list of existing namespaces.
+```
+                    ┌─────────────────────────────────────┐
+                    │  Add new Python object to docs      │
+                    └─────────────────┬───────────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────────┐
+                    │  Is the object in an existing       │
+                    │  namespace?                         │
+                    │                                     │
+                    │  Existing namespaces:               │
+                    │  • wandb (SDK/Actions)              │
+                    │  • wandb.plot (Custom Charts)       │
+                    │  • wandb.sdk.data_types (Data Types)│
+                    │  • wandb.apis.public (Query API)    │
+                    │  • wandb.automations (Automations)  │
+                    └─────────────────┬───────────────────┘
+                                      │
+                     ┌────────────────┴────────────────┐
+                     │                                 │
+                    YES                               NO
+                     │                                 │
+                     ▼                                 ▼
+    ┌────────────────────────────────┐   ┌────────────────────────────────┐
+    │  1. Add to `__all__` in the    │   │  1. Open configuration.py      │
+    │     appropriate file:          │   │                                │
+    │     • __init__.py              │   │  2. Add new entry to SOURCE    │
+    │     • __init__.template.pyi    │   │     dictionary with:           │
+    │                                │   │     • module                   │
+    │  2. Add ignore markers to      │   │     • file_path                │
+    │     exclude internal items     │   │     • hugo_specs:              │
+    │     (if needed)                │   │       - title                  │
+    └────────────────┬───────────────┘   │       - description            │
+                     │                   │       - frontmatter            │
+                     │                   │       - folder_name            │
+                     │                   └────────────────┬───────────────┘
+                     │                                    │
+                     └────────────────┬───────────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────────┐
+                    │  Run: bash create_wandb_sdk_docs.sh │
+                    └─────────────────────────────────────┘
+```
+
+First, ask yourself: Is the Python object already in an existing namespace? E.g. `wandb`, `wandb.apis.public`, or `wandb.automations`.
+
+> [See the `"module"` keys](https://github.com/ngrayluna/generate-wandb-python-reference/blob/main/configuration.py#L5) specified in `configuration.py` for a full list of existing namespaces.
 
 If yes, then:
 
